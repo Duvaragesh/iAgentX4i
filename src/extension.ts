@@ -18,6 +18,8 @@ import { GetActiveEditorTool } from './tools/getActiveEditor.js';
 import { ListOpenEditorsTool } from './tools/listOpenEditors.js';
 import { UpdateActiveEditorTool } from './tools/updateActiveEditor.js';
 import { UpdateEditorByUriTool } from './tools/updateEditorByUri.js';
+import { GetSpoolFileTool } from './tools/getSpoolFile.js';
+import { FindJobsTool } from './tools/findJobs.js';
 
 const SERVER_NAME = 'ibm-iagentx';
 const OLD_SERVER_NAME = 'dk-ibmi-mcp'; // legacy key — removed from configs on first run
@@ -137,6 +139,46 @@ async function updateVscodeMcpJson(port: number, channel: vscode.OutputChannel):
   );
 }
 
+async function updateBobMcpSettings(port: number, channel: vscode.OutputChannel): Promise<boolean> {
+  const bobFolder: string = vscode.workspace.getConfiguration('ibm-iagentx').get('bobAppDataFolder') ?? '';
+  if (!bobFolder.trim()) {
+    channel.appendLine('[iAgentX] Bob app data folder not configured — skipping Bob config');
+    return false;
+  }
+
+  const platform = process.platform;
+  let appDataRoot: string;
+  if (platform === 'win32') {
+    appDataRoot = process.env.APPDATA ?? path.join(os.homedir(), 'AppData', 'Roaming');
+  } else if (platform === 'darwin') {
+    appDataRoot = path.join(os.homedir(), 'Library', 'Application Support');
+  } else {
+    appDataRoot = process.env.XDG_CONFIG_HOME ?? path.join(os.homedir(), '.config');
+  }
+
+  const bobMcpPath = path.join(
+    appDataRoot, bobFolder, 'User', 'globalStorage',
+    'saoudrizwan.claude-dev', 'settings', 'cline_mcp_settings.json'
+  );
+
+  // Only update if the file already exists — confirms Bob is actually installed
+  try {
+    await fs.access(bobMcpPath);
+  } catch {
+    channel.appendLine(`[iAgentX] Bob cline_mcp_settings.json not found at ${bobMcpPath} — skipping`);
+    return false;
+  }
+
+  return updateJsonConfig(
+    bobMcpPath,
+    port, channel,
+    cfg => ((cfg.mcpServers ?? {}) as Record<string, { type: string; url: string }>),
+    (cfg, servers) => { cfg.mcpServers = servers; },
+    '/sse',
+    'Bob cline_mcp_settings.json'
+  );
+}
+
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const channel = vscode.window.createOutputChannel('IBM iAgentX');
   context.subscriptions.push(channel);
@@ -244,9 +286,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       Promise.all([
         updateClaudeJson(port, channel),
         updateVscodeMcpJson(port, channel),
-      ]).then(([claudeChanged, mcpChanged]) => {
+        updateBobMcpSettings(port, channel),
+      ]).then(([claudeChanged, mcpChanged, bobChanged]) => {
         channel.appendLine('[iAgentX] startServer() complete');
-        if (claudeChanged || mcpChanged) {
+        if (claudeChanged || mcpChanged || bobChanged) {
           vscode.window.showInformationMessage(
             `IBM iAgentX: Server registered on port ${port}. Start a new Claude Code session to use IBM i tools.`,
             'OK'
@@ -296,6 +339,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     Promise.all([
       updateClaudeJson(activePort, channel),
       updateVscodeMcpJson(activePort, channel),
+      updateBobMcpSettings(activePort, channel),
     ]).then(() => {
       vscode.window.showInformationMessage(
         `IBM iAgentX: Config refreshed (port ${activePort}). Start a new Claude Code session if needed.`
@@ -349,6 +393,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         Promise.all([
           updateClaudeJson(activePort, channel),
           updateVscodeMcpJson(activePort, channel),
+          updateBobMcpSettings(activePort, channel),
         ]).then(() => {
           vscode.window.showInformationMessage(
             `IBM iAgentX: Config refreshed (port ${activePort}). Start a new Claude Code session if needed.`
@@ -376,6 +421,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.lm.registerTool('ibmi_list_open_editors',    new ListOpenEditorsTool()),
     vscode.lm.registerTool('ibmi_update_active_editor', new UpdateActiveEditorTool()),
     vscode.lm.registerTool('ibmi_update_editor_by_uri', new UpdateEditorByUriTool()),
+    vscode.lm.registerTool('ibmi_get_spool_file',       new GetSpoolFileTool()),
+    vscode.lm.registerTool('ibmi_find_jobs',            new FindJobsTool()),
   ];
   context.subscriptions.push(...lmTools);
 
@@ -390,6 +437,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     await Promise.all([
       updateClaudeJson(preferredPort, channel),
       updateVscodeMcpJson(preferredPort, channel),
+      updateBobMcpSettings(preferredPort, channel),
     ]);
     subscribeToIbmiEvents();
     return;

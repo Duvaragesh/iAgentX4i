@@ -12,14 +12,26 @@ function isAllowed(command: string): boolean {
   return ALLOWED_PREFIXES.some(p => verb.startsWith(p));
 }
 
+// CPYSPLF is allowed only when writing to TOFILE(*TOSTMF) with a path under /tmp/
+function validateCpySplf(command: string): boolean {
+  const tofileMatch = /TOFILE\s*\(\s*\*TOSTMF\s*\)/i.test(command);
+  const tostmfMatch = /TOSTMF\s*\(\s*'(\/[^']+)'\s*\)/i.exec(command);
+  return tofileMatch && tostmfMatch !== null && tostmfMatch[1].startsWith('/tmp/');
+}
+
 export class RunClCommandTool implements vscode.LanguageModelTool<RunClCommandInput> {
   async invoke(
     options: vscode.LanguageModelToolInvocationOptions<RunClCommandInput>,
     _token: vscode.CancellationToken
   ): Promise<vscode.LanguageModelToolResult> {
     const { command } = options.input;
+    const verb = command.trim().toUpperCase().split(/\s+/)[0];
 
-    if (!isAllowed(command)) {
+    if (verb === 'CPYSPLF') {
+      if (!validateCpySplf(command)) {
+        throw new Error('CPYSPLF is only permitted with TOFILE(*TOSTMF) and a destination path under /tmp/');
+      }
+    } else if (!isAllowed(command)) {
       throw new Error(
         `Command not allowed: only read-only commands starting with ${ALLOWED_PREFIXES.join(', ')} are permitted.`
       );

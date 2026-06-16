@@ -151,7 +151,8 @@ const TOOLS = [
     description: 'Returns the current IBM i connection status. Use this to check whether a connection is active before running other tools. ' +
       'Available tools: ibmi_connection_status, ibmi_get_active_editor, ibmi_list_open_editors, ibmi_update_active_editor, ' +
       'ibmi_update_editor_by_uri, ibmi_replace_in_active_editor, ibmi_get_source_member, ibmi_list_source_members, ' +
-      'ibmi_list_source_files, ibmi_get_ifs_file, ibmi_list_ifs_directory, ibmi_run_sql, ibmi_get_job_log, ibmi_run_cl_command. ' +
+      'ibmi_list_source_files, ibmi_get_ifs_file, ibmi_list_ifs_directory, ibmi_run_sql, ibmi_get_job_log, ibmi_run_cl_command, ' +
+      'ibmi_get_spool_file, ibmi_find_jobs. ' +
       'The first six (ibmi_get_active_editor, ibmi_list_open_editors, ibmi_update_active_editor, ibmi_update_editor_by_uri, ' +
       'ibmi_replace_in_active_editor) work without an IBM i connection; all others require one. ' +
       'Fetch all needed tool schemas in a single ToolSearch call upfront rather than sequentially.',
@@ -186,13 +187,41 @@ const TOOLS = [
   },
   {
     name: 'ibmi_run_cl_command',
-    description: 'Runs a read-only CL command (DSP*, WRK*, CHK*, RTV*, PRT*, DMP*, LST*, QRY* prefixes only) and returns its output.',
+    description: 'Runs a read-only CL command (DSP*, WRK*, CHK*, RTV*, PRT*, DMP*, LST*, QRY* prefixes only) and returns its output. CPYSPLF is also allowed when TOFILE(*TOSTMF) and a destination path under /tmp/ are specified.',
     inputSchema: {
       type: 'object',
       properties: {
         command: { type: 'string', description: 'CL command to run (e.g. DSPFD FILE(MYLIB/QCLLESRC))' },
       },
       required: ['command'],
+    },
+  },
+  {
+    name: 'ibmi_get_spool_file',
+    description: 'Retrieves the text content of a spool file from an IBM i job. Use this to read QPJOBLOG or other spool files from completed or active jobs.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        job: { type: 'string', description: 'Qualified job name in NUMBER/USER/NAME format, e.g. 899342/ADMIN/PPECPRC' },
+        splfname: { type: 'string', description: 'Spool file name, e.g. QPJOBLOG' },
+        splfnbr: { type: 'number', description: 'Spool file number. If omitted, returns the last/most recent matching spool file' },
+      },
+      required: ['job', 'splfname'],
+    },
+  },
+  {
+    name: 'ibmi_find_jobs',
+    description: 'Searches for IBM i jobs by name pattern, user, and status — active or recently ended. Supports trailing wildcards, e.g. PPLPMENV*.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        jobname: { type: 'string', description: 'Job name to search. Supports trailing wildcard, e.g. PPLPMENV*' },
+        username: { type: 'string', description: 'Filter by IBM i user profile, e.g. ADMIN' },
+        status: { type: 'string', enum: ['ACTIVE', 'OUTQ', 'ALL'], description: 'ACTIVE — active jobs only; OUTQ — ended jobs; ALL — both (default)' },
+        date_from: { type: 'string', description: 'Start date filter in YYYY-MM-DD format (applies to ended jobs)' },
+        date_to: { type: 'string', description: 'End date filter in YYYY-MM-DD format (applies to ended jobs)' },
+      },
+      required: ['jobname'],
     },
   },
   {
@@ -399,9 +428,10 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<an
   }
 
   if (name === 'ibmi_get_job_log') {
+    const jobArg = args.job ? String(args.job) : undefined;
     let query: string;
-    if (args.job) {
-      const parts = String(args.job).split('/');
+    if (jobArg) {
+      const parts = jobArg.split('/');
       if (parts.length !== 3) {
         throw new Error('job must be in NUMBER/USER/NAME format');
       }
@@ -410,13 +440,33 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<an
     } else {
       query = `SELECT MESSAGE_ID, MESSAGE_TEXT, SEVERITY, MESSAGE_TYPE FROM TABLE(QSYS2.JOBLOG_INFO('*')) ORDER BY ORDINAL_POSITION DESC FETCH FIRST 100 ROWS ONLY`;
     }
-    const rows = await getConn().runSQL(query) as Record<string, unknown>[];
-    const messages = rows.map(r => ({
-      id: String(r['MESSAGE_ID'] ?? ''),
-      text: String(r['MESSAGE_TEXT'] ?? ''),
-      severity: r['SEVERITY'] != null ? Number(r['SEVERITY']) : undefined,
-      type: r['MESSAGE_TYPE'] != null ? String(r['MESSAGE_TYPE']) : undefined,
-    }));
+    let messages: { id: string; text: string; severity?: number; type?: string }[];
+    try {
+      const rows = await getConn().runSQL(query) as Record<string, unknown>[];
+      messages = rows.map(r => ({
+        id: String(r['MESSAGE_ID'] ?? ''),
+        text: String(r['MESSAGE_TEXT'] ?? ''),
+        severity: r['SEVERITY'] != null ? Number(r['SEVERITY']) : undefined,
+        type: r['MESSAGE_TYPE'] != null ? String(r['MESSAGE_TYPE']) : undefined,
+      }));
+    } catch {
+      if (!jobArg) {
+        throw new Error('Job log for current job is unavailable');
+      }
+      const [jobNumber] = jobArg.split('/');
+      const tmpPath = `/tmp/iagentx_joblog_${jobNumber}.txt`;
+      const cmdResult = await getConn().runCommand({
+        command: `CPYSPLF FILE(QPJOBLOG) TOFILE(*TOSTMF) JOB(${jobArg}) TOSTMF('${tmpPath}') STMFOPT(*REPLACE)`,
+        environment: 'ile',
+      });
+      if (cmdResult.code !== 0) {
+        messages = [{ id: 'SPOOL', text: 'Job has ended and spool file is no longer available', type: 'SPOOL' }];
+      } else {
+        const buf = await getContent().downloadStreamfileRaw(tmpPath);
+        await getConn().runCommand({ command: `RMVLNK OBJLNK('${tmpPath}')`, environment: 'ile' }).catch(() => {});
+        messages = [{ id: 'SPOOL', text: buf.toString('utf-8'), type: 'SPOOL' }];
+      }
+    }
     return {
       content: [{ type: 'text', text: JSON.stringify({ messages, total: messages.length }, null, 2) }],
     };
@@ -424,11 +474,20 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<an
 
   if (name === 'ibmi_run_cl_command') {
     const command = String(args.command);
-    const cfg = vscode.workspace.getConfiguration('ibm-iagentx');
-    const ALLOWED_PREFIXES: string[] = cfg.get('clAllowedPrefixes') ?? ['DSP', 'LST', 'WRK', 'CHK', 'PRT', 'DMP', 'RTV', 'QRY'];
     const verb = command.trim().toUpperCase().split(/\s+/)[0];
-    if (!ALLOWED_PREFIXES.some(p => verb.startsWith(p))) {
-      throw new Error(`Command not allowed. Only read-only commands starting with ${ALLOWED_PREFIXES.join(', ')} are permitted.`);
+    if (verb === 'CPYSPLF') {
+      const tofileMatch = /TOFILE\s*\(\s*\*TOSTMF\s*\)/i.test(command);
+      const tostmfMatch = /TOSTMF\s*\(\s*'(\/[^']+)'\s*\)/i.exec(command);
+      const validPath = tostmfMatch !== null && tostmfMatch[1].startsWith('/tmp/');
+      if (!tofileMatch || !validPath) {
+        throw new Error('CPYSPLF is only permitted with TOFILE(*TOSTMF) and a destination path under /tmp/');
+      }
+    } else {
+      const cfg = vscode.workspace.getConfiguration('ibm-iagentx');
+      const ALLOWED_PREFIXES: string[] = cfg.get('clAllowedPrefixes') ?? ['DSP', 'LST', 'WRK', 'CHK', 'PRT', 'DMP', 'RTV', 'QRY'];
+      if (!ALLOWED_PREFIXES.some(p => verb.startsWith(p))) {
+        throw new Error(`Command not allowed. Only read-only commands starting with ${ALLOWED_PREFIXES.join(', ')} are permitted.`);
+      }
     }
     const result = await getConn().runCommand({ command, environment: 'ile' });
     return {
@@ -437,6 +496,99 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<an
         stderr: result.stderr || undefined,
         exitCode: result.code ?? 0,
       }, null, 2) }],
+    };
+  }
+
+  if (name === 'ibmi_get_spool_file') {
+    const job = String(args.job);
+    const splfname = String(args.splfname).toUpperCase();
+    const splfnbr = args.splfnbr != null ? Number(args.splfnbr) : undefined;
+    const parts = job.split('/');
+    if (parts.length !== 3) {
+      throw new Error('job must be in NUMBER/USER/NAME format, e.g. 123456/MYUSER/QZDASOINIT');
+    }
+    const [jobNumber] = parts;
+    const splfnbrFilter = splfnbr != null ? ` AND SPOOLED_FILE_NUMBER = ${splfnbr}` : '';
+    const metaQuery = `SELECT SPOOLED_FILE_NUMBER FROM TABLE(QSYS2.SPOOLED_FILE_INFO(JOB_NAME => '${job}')) WHERE SPOOLED_FILE_NAME = '${splfname}'${splfnbrFilter} ORDER BY SPOOLED_FILE_NUMBER DESC FETCH FIRST 1 ROW ONLY`;
+    let metaRows: Record<string, unknown>[];
+    try {
+      metaRows = await getConn().runSQL(metaQuery) as Record<string, unknown>[];
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (/not found|CPF3307|CPF3330/i.test(msg)) { throw new Error(`Job ${job} not found`); }
+      throw e;
+    }
+    if (metaRows.length === 0) {
+      throw new Error(`No spool file ${splfname} found for job ${job}`);
+    }
+    const resolvedSplfnbr = Number(metaRows[0]['SPOOLED_FILE_NUMBER']);
+    const tmpPath = `/tmp/iagentx_${jobNumber}_${splfname}_${resolvedSplfnbr}.txt`;
+    const cpySplf = `CPYSPLF FILE(${splfname}) TOFILE(*TOSTMF) JOB(${job}) TOSTMF('${tmpPath}') SPLFNBR(${resolvedSplfnbr}) STMFOPT(*REPLACE)`;
+    const cmdResult = await getConn().runCommand({ command: cpySplf, environment: 'ile' });
+    if (cmdResult.code !== 0) {
+      const stderr = cmdResult.stderr ?? '';
+      if (/not authorized|CPF2189|CPF2177/i.test(stderr)) { throw new Error(`Not authorised to spool file for job ${job}`); }
+      if (/not found|CPF3307|CPF3330/i.test(stderr)) { throw new Error(`Job ${job} not found`); }
+      throw new Error(`CPYSPLF failed: ${stderr || cmdResult.stdout || 'unknown error'}`);
+    }
+    const buf = await getContent().downloadStreamfileRaw(tmpPath);
+    const content = buf.toString('utf-8');
+    await getConn().runCommand({ command: `RMVLNK OBJLNK('${tmpPath}')`, environment: 'ile' }).catch(() => {});
+    return {
+      content: [{ type: 'text', text: JSON.stringify({ job, splfname, splfnbr: resolvedSplfnbr, content, lineCount: content.split('\n').length }, null, 2) }],
+    };
+  }
+
+  if (name === 'ibmi_find_jobs') {
+    const jobname = String(args.jobname).toUpperCase();
+    const username = args.username ? String(args.username).toUpperCase() : undefined;
+    const status = args.status ? String(args.status).toUpperCase() : 'ALL';
+    const dateFrom = args.date_from ? String(args.date_from) : undefined;
+    const dateTo = args.date_to ? String(args.date_to) : undefined;
+    // Convert trailing * to % for LIKE matching
+    const jobPattern = jobname.endsWith('*') ? jobname.slice(0, -1) + '%' : jobname;
+    const jobs: Record<string, unknown>[] = [];
+
+    if (status === 'ACTIVE' || status === 'ALL') {
+      const userFilter = username ? ` AND JOB_USER = '${username}'` : '';
+      const activeQuery = `SELECT JOB_NAME_SHORT, JOB_USER, JOB_NUMBER, JOB_STATUS, JOB_ENTERED_SYSTEM_TIME, SUBSYSTEM FROM TABLE(QSYS2.ACTIVE_JOB_INFO(JOB_NAME_FILTER => '${jobPattern}')) WHERE 1=1${userFilter}`;
+      const rows = await getConn().runSQL(activeQuery) as Record<string, unknown>[];
+      for (const r of rows) {
+        jobs.push({
+          job_number: String(r['JOB_NUMBER'] ?? ''),
+          job_user: String(r['JOB_USER'] ?? ''),
+          job_name: String(r['JOB_NAME_SHORT'] ?? ''),
+          status: 'ACTIVE',
+          end_time: null,
+          completion_code: null,
+          subsystem: r['SUBSYSTEM'] != null ? String(r['SUBSYSTEM']) : null,
+        });
+      }
+    }
+
+    if (status === 'OUTQ' || status === 'ALL') {
+      const startTime = dateFrom ? `'${dateFrom} 00:00:00'` : 'CURRENT_TIMESTAMP - 7 DAYS';
+      const endFilter = dateTo ? ` AND MESSAGE_TIMESTAMP <= '${dateTo} 23:59:59'` : '';
+      const userFilter = username ? ` AND FROM_JOB_USER = '${username}'` : '';
+      const endedQuery = `SELECT FROM_JOB_NAME, FROM_JOB_USER, FROM_JOB_NUMBER, FROM_JOB, MESSAGE_TIMESTAMP, MESSAGE_TEXT FROM TABLE(QSYS2.HISTORY_LOG_INFO(START_TIME => ${startTime})) WHERE MESSAGE_ID = 'CPF1164' AND FROM_JOB_NAME LIKE '${jobPattern}'${userFilter}${endFilter} ORDER BY MESSAGE_TIMESTAMP DESC`;
+      const rows = await getConn().runSQL(endedQuery) as Record<string, unknown>[];
+      for (const r of rows) {
+        const msgText = String(r['MESSAGE_TEXT'] ?? '');
+        const codeMatch = /end code (\d+)/i.exec(msgText);
+        jobs.push({
+          job_number: String(r['FROM_JOB_NUMBER'] ?? ''),
+          job_user: String(r['FROM_JOB_USER'] ?? ''),
+          job_name: String(r['FROM_JOB_NAME'] ?? ''),
+          status: 'ENDED',
+          end_time: r['MESSAGE_TIMESTAMP'] != null ? String(r['MESSAGE_TIMESTAMP']) : null,
+          completion_code: codeMatch ? Number(codeMatch[1]) : null,
+          subsystem: null,
+        });
+      }
+    }
+
+    return {
+      content: [{ type: 'text', text: JSON.stringify({ jobs, total: jobs.length }, null, 2) }],
     };
   }
 

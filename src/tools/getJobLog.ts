@@ -25,13 +25,35 @@ export class GetJobLogTool implements vscode.LanguageModelTool<GetJobLogInput> {
       query = `SELECT MESSAGE_ID, MESSAGE_TEXT, SEVERITY, MESSAGE_TYPE FROM TABLE(QSYS2.JOBLOG_INFO('*')) ORDER BY ORDINAL_POSITION DESC FETCH FIRST 100 ROWS ONLY`;
     }
 
-    const rows = await connection.runSQL(query) as Record<string, unknown>[];
-    const messages: JobMessage[] = rows.map(r => ({
-      id: String(r['MESSAGE_ID'] ?? ''),
-      text: String(r['MESSAGE_TEXT'] ?? ''),
-      severity: r['SEVERITY'] !== null && r['SEVERITY'] !== undefined ? Number(r['SEVERITY']) : undefined,
-      type: r['MESSAGE_TYPE'] !== null && r['MESSAGE_TYPE'] !== undefined ? String(r['MESSAGE_TYPE']) : undefined,
-    }));
+    let messages: JobMessage[];
+    try {
+      const rows = await connection.runSQL(query) as Record<string, unknown>[];
+      messages = rows.map(r => ({
+        id: String(r['MESSAGE_ID'] ?? ''),
+        text: String(r['MESSAGE_TEXT'] ?? ''),
+        severity: r['SEVERITY'] !== null && r['SEVERITY'] !== undefined ? Number(r['SEVERITY']) : undefined,
+        type: r['MESSAGE_TYPE'] !== null && r['MESSAGE_TYPE'] !== undefined ? String(r['MESSAGE_TYPE']) : undefined,
+      }));
+    } catch {
+      // For ended jobs, fall back to reading the QPJOBLOG spool file via CPYSPLF
+      if (!job) {
+        throw new Error('Job log for current job is unavailable');
+      }
+      const parts = job.split('/');
+      const [jobNumber] = parts;
+      const tmpPath = `/tmp/iagentx_joblog_${jobNumber}.txt`;
+      const cmdResult = await connection.runCommand({
+        command: `CPYSPLF FILE(QPJOBLOG) TOFILE(*TOSTMF) JOB(${job}) TOSTMF('${tmpPath}') STMFOPT(*REPLACE)`,
+        environment: 'ile',
+      });
+      if (cmdResult.code !== 0) {
+        messages = [{ id: 'SPOOL', text: 'Job has ended and spool file is no longer available', type: 'SPOOL' }];
+      } else {
+        const buf = await connection.getContent().downloadStreamfileRaw(tmpPath);
+        await connection.runCommand({ command: `RMVLNK OBJLNK('${tmpPath}')`, environment: 'ile' }).catch(() => {});
+        messages = [{ id: 'SPOOL', text: buf.toString('utf-8'), type: 'SPOOL' }];
+      }
+    }
 
     const result: GetJobLogOutput = { messages, total: messages.length };
     return new vscode.LanguageModelToolResult([

@@ -127,3 +127,40 @@ export interface RunClCommandOutput {
   stderr?: string;
   exitCode: number;
 }
+
+export interface GetSpoolFileInput {
+  job: string;
+  splfname: string;
+  splfnbr?: number;
+}
+
+export interface GetSpoolFileOutput {
+  job: string;
+  splfname: string;
+  splfnbr: number;
+  content: string;
+  lineCount: number;
+}
+
+export interface FindJobsInput {
+  jobname: string;
+  username?: string;
+  status?: 'ACTIVE' | 'OUTQ' | 'ALL';
+  date_from?: string;
+  date_to?: string;
+}
+
+export interface JobInfo {
+  job_number: string;
+  job_user: string;
+  job_name: string;
+  status: 'ACTIVE' | 'ENDED';
+  end_time: string | null;
+  completion_code: number | null;
+  subsystem: string | null;
+}
+
+export interface FindJobsOutput {
+  jobs: JobInfo[];
+  total: number;
+}

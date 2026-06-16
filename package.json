@@ -2,7 +2,7 @@
   "name": "ibm-iagentx",
   "displayName": "IBM iAgentX",
   "description": "Extends IBM i resources (source members, IFS, SQL, job logs) into VS Code AI agents — GitHub Copilot Chat and Claude Code — via MCP.",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "publisher": "Duvaragesh",
   "license": "MIT",
   "icon": "images/logo.png",
@@ -74,6 +74,11 @@
           "type": "number",
           "default": 41927,
           "description": "Preferred HTTP port for the MCP server (falls back to +4 consecutive ports if busy)."
+        },
+        "ibm-iagentx.bobAppDataFolder": {
+          "type": "string",
+          "default": "",
+          "description": "App data folder name used by IBM Bob on this OS (e.g. 'IBMBob'). Leave blank to disable Bob auto-configuration. The full path resolved is: <appData>/<bobAppDataFolder>/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
         }
       }
     }
@@ -81,7 +86,8 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "package": "npm run compile && vsce package --readme-path MARKETPLACE.md"
+    "package": "npm run compile && vsce package --readme-path MARKETPLACE.md",
+    "publish": "npm run compile && vsce publish --readme-path MARKETPLACE.md"
   },
   "devDependencies": {
     "@halcyontech/vscode-ibmi-types": "^2.0.0",

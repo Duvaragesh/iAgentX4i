@@ -17,7 +17,9 @@ Ask your AI agent to:
 - Edit open source members directly from the AI agent — surgical single-line replacements or full updates
 - Browse IFS files and directories
 - Query DB2 for i with plain SQL
-- Pull job log messages by job ID or current job
+- Pull job log messages by job ID — works for active and ended jobs alike
+- Retrieve spool file content (QPJOBLOG and others) from any job
+- Search for jobs by name pattern, user, and status
 - Run read-only CL commands (DSPFD, WRKACTJOB, …)
 
 Everything happens through the existing Code for IBM i SSH session.
@@ -78,8 +80,10 @@ IBM Bob reads the same `mcp.json` entry — no extra configuration needed.
 | `ibmi_get_ifs_file` | Read a file from the IFS |
 | `ibmi_list_ifs_directory` | List contents of an IFS directory |
 | `ibmi_run_sql` | Run a read-only SQL query against DB2 for i |
-| `ibmi_get_job_log` | Retrieve job log messages (by job ID or current job) |
-| `ibmi_run_cl_command` | Run a read-only CL command |
+| `ibmi_get_job_log` | Retrieve job log messages — active jobs and ended jobs (spool fallback) |
+| `ibmi_get_spool_file` | Retrieve the full text of any spool file (e.g. QPJOBLOG) from any job |
+| `ibmi_find_jobs` | Search for jobs by name pattern, user, and status (active or ended) |
+| `ibmi_run_cl_command` | Run a read-only CL command; CPYSPLF to `/tmp/` also permitted |
 | `ibmi_get_active_editor` | Read the content and metadata of the currently open editor |
 | `ibmi_list_open_editors` | List all visible editor tabs with URI and member info |
 | `ibmi_update_active_editor` | Replace the full content of the active editor and save |
@@ -133,7 +137,8 @@ second window's AI tools route through the same server. No extra ports are used.
 - Read tools are **read-only** — no write, delete, or compile operations
 - Editor tools (`ibmi_update_*`, `ibmi_replace_*`) only modify files **open in the editor** — no blind remote writes
 - `ibmi_run_sql` only accepts SELECT, WITH (CTEs), and VALUES statements
-- `ibmi_run_cl_command` enforces a configurable verb-prefix allowlist
+- `ibmi_run_cl_command` enforces a configurable verb-prefix allowlist; CPYSPLF is only permitted with `TOFILE(*TOSTMF)` and a destination under `/tmp/`
+- `ibmi_get_spool_file` copies to a temp path under `/tmp/` and deletes after reading
 - No credentials stored — piggybacks on Code for IBM i's SSH session
 - iAgentX server binds to loopback (`127.0.0.1`) only — never reachable from outside your machine
 

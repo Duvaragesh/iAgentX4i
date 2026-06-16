@@ -2,6 +2,18 @@
 
 All notable changes to IBM iAgentX are documented here.
 
+## [0.1.8] - 2026-06-16
+
+### Added
+- **`ibmi_get_spool_file`** — new tool to retrieve the text content of any spool file from an active or completed IBM i job. Accepts `job` (NUMBER/USER/NAME), `splfname` (e.g. `QPJOBLOG`), and optional `splfnbr`. Uses `CPYSPLF` internally to copy to `/tmp/`, reads the content, and cleans up the temp file automatically. Returns `{ job, splfname, splfnbr, content, lineCount }`.
+- **`ibmi_find_jobs`** — new tool to search for IBM i jobs by name pattern (supports trailing `*` wildcard), optional user, and status filter (`ACTIVE` / `OUTQ` / `ALL`). Active jobs are sourced from `QSYS2.ACTIVE_JOB_INFO`; ended jobs from `QSYS2.HISTORY_LOG_INFO` (CPF1164 messages). Returns job number, user, name, status, end time, completion code, and subsystem.
+
+### Improved
+- **`ibmi_get_job_log`** — now falls back to the `QPJOBLOG` spool file when the in-memory job log is unavailable (e.g. for ended jobs). Returns spool content as a single `SPOOL` message. If the spool has also been deleted, returns a clear message: "Job has ended and spool file is no longer available".
+- **`ibmi_run_cl_command`** — `CPYSPLF` is now permitted as an exception to the read-only prefix whitelist, provided `TOFILE(*TOSTMF)` is specified and the destination path is under `/tmp/`. Any other destination is rejected with a clear error.
+
+---
+
 ## [0.1.7] - 2026-06-16
 
 ### Improved

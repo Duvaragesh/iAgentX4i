@@ -18,10 +18,13 @@ pull job logs, and run CL commands — all directly from the AI chat.
 - List source physical files and their members
 - Read and browse IFS files and directories
 - Run read-only SQL against DB2 for i
-- Retrieve job log messages
-- Run read-only CL commands (allowlisted prefixes)
+- Retrieve job log messages (active jobs and ended jobs via spool fallback)
+- Retrieve spool file content for any job (QPJOBLOG and others)
+- Search for jobs by name pattern, user, and status
+- Run read-only CL commands (allowlisted prefixes; CPYSPLF to /tmp/ also permitted)
+- Edit open source members directly from the AI agent
 - Auto-configures Claude Code and VS Code on first activation
-- Status bar with one-click reconnect
+- Status bar with server management menu
 
 ---
 
@@ -116,12 +119,15 @@ To pin a port permanently:
 
 | Display | Meaning |
 |---|---|
-| `⟳ iAgentX` (spinning) | Server is starting |
-| `✓ iAgentX :41927` | Running on port 41927 — click to reconnect |
+| `⟳ iAgentX` | Server is starting |
+| `✓ iAgentX :41927` | Running — IBM i connected |
+| `✓ iAgentX :41927 (shared)` | Another VS Code window owns the server |
+| `⚠ iAgentX :41927` | Server running but IBM i disconnected |
+| `⊘ iAgentX` | Server manually stopped |
 | `✗ iAgentX` | Failed to bind any port |
 
-Click the status bar item (or run **IBM iAgentX: Reconnect** from the Command Palette)
-to re-write the config files with the current port.
+Click the status bar item to open the management menu (Start / Stop / Restart / Refresh config),
+or run **IBM iAgentX: Manage MCP Server** from the Command Palette.
 
 ---
 
@@ -192,7 +198,7 @@ Example: ibmi_run_sql("SELECT * FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'DK'")
 ```
 
 ### `ibmi_get_job_log`
-Retrieve job log messages via `QSYS2.JOBLOG_INFO`.
+Retrieve job log messages. For ended jobs, automatically falls back to the QPJOBLOG spool file.
 
 ```
 Input:  job? (string — NUMBER/USER/NAME format, or omit for current job)
@@ -201,15 +207,38 @@ Example: ibmi_get_job_log()
          ibmi_get_job_log("123456/MYUSER/QZDASOINIT")
 ```
 
+### `ibmi_get_spool_file`
+Retrieve the full text content of any spool file from an active or completed job.
+
+```
+Input:  job (string — NUMBER/USER/NAME), splfname (string), splfnbr? (number)
+Output: { job, splfname, splfnbr, content, lineCount }
+Example: ibmi_get_spool_file("899342/ADMIN/PPECPRC", "QPJOBLOG")
+         ibmi_get_spool_file("899342/ADMIN/PPECPRC", "QPJOBLOG", 2)
+```
+
+### `ibmi_find_jobs`
+Search for IBM i jobs by name pattern, user, and status.
+
+```
+Input:  jobname (string, trailing * wildcard supported),
+        username? (string), status? ("ACTIVE" | "OUTQ" | "ALL"),
+        date_from? (YYYY-MM-DD), date_to? (YYYY-MM-DD)
+Output: { total, jobs: [{ job_number, job_user, job_name, status, end_time, completion_code, subsystem }] }
+Example: ibmi_find_jobs("PPLPMENV*", status="ALL")
+         ibmi_find_jobs("PPECPRC", username="ADMIN", status="OUTQ", date_from="2026-06-01")
+```
+
 ### `ibmi_run_cl_command`
-Run a read-only CL command.
+Run a read-only CL command. CPYSPLF is also permitted when writing to TOFILE(*TOSTMF) with a path under /tmp/.
 
 ```
 Input:  command (string)
 Output: { output, stderr, exitCode }
 Allowed prefixes (configurable): DSP, LST, WRK, CHK, PRT, DMP, RTV, QRY
+Also allowed: CPYSPLF FILE(...) TOFILE(*TOSTMF) ... TOSTMF('/tmp/...')
 Example: ibmi_run_cl_command("DSPFD FILE(DK/QCLLESRC)")
-         ibmi_run_cl_command("WRKACTJOB")
+         ibmi_run_cl_command("CPYSPLF FILE(QPJOBLOG) TOFILE(*TOSTMF) JOB(899342/ADMIN/PPECPRC) TOSTMF('/tmp/ppecprc.txt') STMFOPT(*REPLACE)")
 ```
 
 ---
@@ -277,9 +306,11 @@ The HTTP server binds to `127.0.0.1` only — never reachable from outside your 
 
 ## Security
 
-- All tools are **read-only** — no write, delete, or compile operations
+- Read tools are **read-only** — no write, delete, or compile operations
+- Editor tools only modify files **open in the editor** — no blind remote writes
 - `ibmi_run_sql` rejects anything that is not SELECT/WITH/VALUES
-- `ibmi_run_cl_command` enforces a configurable verb-prefix allowlist
+- `ibmi_run_cl_command` enforces a configurable verb-prefix allowlist; CPYSPLF is only permitted with `TOFILE(*TOSTMF)` and a destination under `/tmp/`
+- `ibmi_get_spool_file` copies to a temp path under `/tmp/` and deletes after reading
 - No credentials stored — piggybacks on Code for IBM i's SSH session
 - MCP HTTP server binds to loopback (`127.0.0.1`) only
 
