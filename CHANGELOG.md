@@ -2,6 +2,20 @@
 
 All notable changes to IBM iAgentX are documented here.
 
+## [0.2.0] - 2026-06-17
+
+### Fixed
+- **`ibmi_get_spool_file` — CPD0043 SPLFNBR not valid** (`getSpoolFile.ts`, `mcpServer.ts`) — `SPLFNBR(n)` is now only appended to the `CPYSPLF` command when the caller explicitly provides `splfnbr`. Omitting it lets IBM i default to `*LAST`, avoiding the CPD0043 error that occurred when the parameter was passed empty.
+- **`ibmi_get_ifs_file` — raw EBCDIC returned as garbage** (`getIfsFile.ts`, `mcpServer.ts`) — replaced `downloadStreamfileRaw` + `toString('utf-8')` with a new `readIfsAsText()` helper (see below). EBCDIC files (e.g. spool files copied to `/tmp/`) are now transcoded by DB2 via `QSYS2.IFS_READ` before being returned. Binary files (CCSID 65535) are returned as base64 with `encoding: 'base64-binary'`. The output now includes an `encoding` field indicating how the content was decoded.
+- **`ibmi_get_job_log` — EBCDIC spool fallback returned garbage** (`getJobLog.ts`, `mcpServer.ts`) — the `CPYSPLF` fallback path for ended jobs now reads the IFS file with `readIfsAsText()` instead of raw UTF-8, so the job log is legible regardless of the file's CCSID.
+- **`ibmi_get_spool_file` — spool content returned as EBCDIC** (`getSpoolFile.ts`, `mcpServer.ts`) — spool files copied to `/tmp/` by `CPYSPLF` are now read with `readIfsAsText()` for consistent EBCDIC transcoding.
+- **`ibmi_run_sql` — SQL0104 on table functions without `TABLE()` wrapper** (`runSql.ts`, `mcpServer.ts`) — on V7R6+ the `TABLE()` wrapper is mandatory for table functions (e.g. `FROM TABLE(QSYS2.IFS_READ(...))`). The tool now auto-detects a SQL0104 failure, rewrites bare `FROM schema.FUNC(...)` patterns to add the wrapper, and retries once transparently. The tool description also documents the requirement so AI agents write it correctly from the start.
+
+### Added
+- **`src/utils/ifsRead.ts`** — new shared helper `readIfsAsText(connection, path)` that reads an IFS file as readable text regardless of its CCSID: queries file CCSID via `QSYS2.IFS_OBJECT_STATISTICS`, returns base64 for binary (CCSID 65535), lets DB2 transcode via `QSYS2.IFS_READ` (with mandatory `TABLE()` wrapper) for all EBCDIC CCSIDs, and falls back to raw UTF-8 download as a last resort.
+
+---
+
 ## [0.1.9] - 2026-06-17
 
 ### Fixed

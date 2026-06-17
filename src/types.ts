@@ -60,6 +60,8 @@ export interface GetIfsFileOutput {
   path: string;
   content: string;
   size: number;
+  /** How the content was decoded: ccsid-NNN, base64-binary, utf-8-fallback */
+  encoding: string;
 }
 
 export interface ListIfsDirectoryInput {

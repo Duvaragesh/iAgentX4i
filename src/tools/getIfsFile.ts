@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { getConnection } from '../ibmiConnection.js';
 import type { GetIfsFileInput, GetIfsFileOutput } from '../types.js';
+import { readIfsAsText } from '../utils/ifsRead.js';
 
 export class GetIfsFileTool implements vscode.LanguageModelTool<GetIfsFileInput> {
   async invoke(
@@ -9,12 +10,10 @@ export class GetIfsFileTool implements vscode.LanguageModelTool<GetIfsFileInput>
   ): Promise<vscode.LanguageModelToolResult> {
     const { path } = options.input;
     const connection = getConnection();
-    const content = connection.getContent();
 
-    const buf = await content.downloadStreamfileRaw(path);
-    const text = buf.toString('utf-8');
+    const { text, encoding } = await readIfsAsText(connection, path);
 
-    const result: GetIfsFileOutput = { path, content: text, size: buf.length };
+    const result: GetIfsFileOutput = { path, content: text, size: Buffer.byteLength(text, 'utf-8'), encoding };
     return new vscode.LanguageModelToolResult([
       new vscode.LanguageModelTextPart(JSON.stringify(result, null, 2)),
     ]);

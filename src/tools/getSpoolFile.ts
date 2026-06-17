@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { getConnection } from '../ibmiConnection.js';
 import type { GetSpoolFileInput, GetSpoolFileOutput } from '../types.js';
+import { readIfsAsText } from '../utils/ifsRead.js';
 
 export class GetSpoolFileTool implements vscode.LanguageModelTool<GetSpoolFileInput> {
   async invoke(
@@ -39,7 +40,9 @@ export class GetSpoolFileTool implements vscode.LanguageModelTool<GetSpoolFileIn
 
     // Copy spool to IFS temp file
     const tmpPath = `/tmp/iagentx_${jobNumber}_${splfname.toUpperCase()}_${resolvedSplfnbr}.txt`;
-    const cpySplf = `CPYSPLF FILE(${splfname.toUpperCase()}) TOFILE(*TOSTMF) JOB(${job}) TOSTMF('${tmpPath}') SPLFNBR(${resolvedSplfnbr}) STMFOPT(*REPLACE)`;
+    // Only include SPLFNBR when the caller provided it — omitting avoids CPD0043
+    const splfnbrClause = splfnbr != null ? ` SPLFNBR(${resolvedSplfnbr})` : '';
+    const cpySplf = `CPYSPLF FILE(${splfname.toUpperCase()}) TOFILE(*TOSTMF) JOB(${job}) TOSTMF('${tmpPath}')${splfnbrClause} STMFOPT(*REPLACE)`;
 
     const cmdResult = await connection.runCommand({ command: cpySplf, environment: 'ile' });
     if (cmdResult.code !== 0) {
@@ -53,9 +56,8 @@ export class GetSpoolFileTool implements vscode.LanguageModelTool<GetSpoolFileIn
       throw new Error(`CPYSPLF failed: ${stderr || cmdResult.stdout || 'unknown error'}`);
     }
 
-    // Read and clean up
-    const buf = await connection.getContent().downloadStreamfileRaw(tmpPath);
-    const content = buf.toString('utf-8');
+    // Read (with EBCDIC transcoding) and clean up
+    const { text: content } = await readIfsAsText(connection, tmpPath);
     await connection.runCommand({ command: `RMVLNK OBJLNK('${tmpPath}')`, environment: 'ile' }).catch(() => {});
 
     const output: GetSpoolFileOutput = {

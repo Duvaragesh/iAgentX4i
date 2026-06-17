@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { getConnection } from '../ibmiConnection.js';
 import type { GetJobLogInput, GetJobLogOutput, JobMessage } from '../types.js';
+import { readIfsAsText } from '../utils/ifsRead.js';
 
 export class GetJobLogTool implements vscode.LanguageModelTool<GetJobLogInput> {
   async invoke(
@@ -49,9 +50,9 @@ export class GetJobLogTool implements vscode.LanguageModelTool<GetJobLogInput> {
       if (cmdResult.code !== 0) {
         messages = [{ id: 'SPOOL', text: 'Job has ended and spool file is no longer available', type: 'SPOOL' }];
       } else {
-        const buf = await connection.getContent().downloadStreamfileRaw(tmpPath);
+        const { text } = await readIfsAsText(connection, tmpPath);
         await connection.runCommand({ command: `RMVLNK OBJLNK('${tmpPath}')`, environment: 'ile' }).catch(() => {});
-        messages = [{ id: 'SPOOL', text: buf.toString('utf-8'), type: 'SPOOL' }];
+        messages = [{ id: 'SPOOL', text, type: 'SPOOL' }];
       }
     }
 

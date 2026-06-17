@@ -3,6 +3,7 @@ import * as fs from 'fs/promises';
 import * as vscode from 'vscode';
 import { getConnection } from './ibmiConnection.js';
 import { parseEditorUri } from './utils/parseEditorUri.js';
+import { readIfsAsText } from './utils/ifsRead.js';
 
 // vscode.window.activeTextEditor goes undefined whenever focus leaves the editor
 // (e.g. the user clicks into the Claude Code terminal to type a prompt).
@@ -164,7 +165,7 @@ const TOOLS = [
   },
   {
     name: 'ibmi_run_sql',
-    description: 'Runs a read-only SQL SELECT query against DB2 for i and returns the result rows. Only SELECT, WITH (CTEs), and VALUES statements are permitted.',
+    description: 'Runs a read-only SQL SELECT query against DB2 for i and returns the result rows. Only SELECT, WITH (CTEs), and VALUES statements are permitted. NOTE: on V7R6+ table functions require the explicit TABLE() wrapper — use FROM TABLE(QSYS2.IFS_READ(...)) not FROM QSYS2.IFS_READ(...). The tool auto-retries with the wrapper on SQL0104, but writing it correctly avoids the extra round-trip.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -387,10 +388,9 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<an
 
   if (name === 'ibmi_get_ifs_file') {
     const ifsPath = String(args.path);
-    const buf = await getContent().downloadStreamfileRaw(ifsPath);
-    const text = buf.toString('utf-8');
+    const { text, encoding } = await readIfsAsText(getConn(), ifsPath);
     return {
-      content: [{ type: 'text', text: JSON.stringify({ path: ifsPath, content: text, size: buf.length }, null, 2) }],
+      content: [{ type: 'text', text: JSON.stringify({ path: ifsPath, content: text, size: Buffer.byteLength(text, 'utf-8'), encoding }, null, 2) }],
     };
   }
 
@@ -419,7 +419,25 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<an
     if (!/^(SELECT|WITH|VALUES)\b/.test(trimmed)) {
       throw new Error('Only SELECT statements are allowed. DML and DDL are not permitted.');
     }
-    const rows = await getConn().runSQL(query) as Record<string, unknown>[];
+    let rows: Record<string, unknown>[];
+    try {
+      rows = await getConn().runSQL(query) as Record<string, unknown>[];
+    } catch (e) {
+      // V7R6+ requires TABLE() wrapper for table functions — auto-retry once
+      if (/SQL0104/i.test(String(e))) {
+        const rewritten = query.replace(
+          /\b(FROM|JOIN)\s+(?!TABLE\s*\()([A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*\s*\()/gi,
+          (_m: string, kw: string, fn: string) => `${kw} TABLE(${fn}`
+        );
+        if (rewritten !== query) {
+          rows = await getConn().runSQL(rewritten) as Record<string, unknown>[];
+        } else {
+          throw e;
+        }
+      } else {
+        throw e;
+      }
+    }
     const sliced = rows.slice(0, maxRows);
     const columns = sliced.length > 0 ? Object.keys(sliced[0]) : [];
     return {
@@ -462,9 +480,9 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<an
       if (cmdResult.code !== 0) {
         messages = [{ id: 'SPOOL', text: 'Job has ended and spool file is no longer available', type: 'SPOOL' }];
       } else {
-        const buf = await getContent().downloadStreamfileRaw(tmpPath);
+        const { text } = await readIfsAsText(getConn(), tmpPath);
         await getConn().runCommand({ command: `RMVLNK OBJLNK('${tmpPath}')`, environment: 'ile' }).catch(() => {});
-        messages = [{ id: 'SPOOL', text: buf.toString('utf-8'), type: 'SPOOL' }];
+        messages = [{ id: 'SPOOL', text, type: 'SPOOL' }];
       }
     }
     return {
@@ -523,7 +541,9 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<an
     }
     const resolvedSplfnbr = Number(metaRows[0]['SPOOLED_FILE_NUMBER']);
     const tmpPath = `/tmp/iagentx_${jobNumber}_${splfname}_${resolvedSplfnbr}.txt`;
-    const cpySplf = `CPYSPLF FILE(${splfname}) TOFILE(*TOSTMF) JOB(${job}) TOSTMF('${tmpPath}') SPLFNBR(${resolvedSplfnbr}) STMFOPT(*REPLACE)`;
+    // Only include SPLFNBR when the caller provided it — omitting avoids CPD0043
+    const splfnbrClause = splfnbr != null ? ` SPLFNBR(${resolvedSplfnbr})` : '';
+    const cpySplf = `CPYSPLF FILE(${splfname}) TOFILE(*TOSTMF) JOB(${job}) TOSTMF('${tmpPath}')${splfnbrClause} STMFOPT(*REPLACE)`;
     const cmdResult = await getConn().runCommand({ command: cpySplf, environment: 'ile' });
     if (cmdResult.code !== 0) {
       const stderr = cmdResult.stderr ?? '';
@@ -531,8 +551,7 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<an
       if (/not found|CPF3307|CPF3330/i.test(stderr)) { throw new Error(`Job ${job} not found`); }
       throw new Error(`CPYSPLF failed: ${stderr || cmdResult.stdout || 'unknown error'}`);
     }
-    const buf = await getContent().downloadStreamfileRaw(tmpPath);
-    const content = buf.toString('utf-8');
+    const { text: content } = await readIfsAsText(getConn(), tmpPath);
     await getConn().runCommand({ command: `RMVLNK OBJLNK('${tmpPath}')`, environment: 'ile' }).catch(() => {});
     return {
       content: [{ type: 'text', text: JSON.stringify({ job, splfname, splfnbr: resolvedSplfnbr, content, lineCount: content.split('\n').length }, null, 2) }],
