@@ -1,5 +1,8 @@
 node_modules/
 out/
+out-int/
 *.vsix
 .claude/
+.vscode-test/
+.vscode-test-data/
 PLAN_VSCODE_IBMI_MCP.md

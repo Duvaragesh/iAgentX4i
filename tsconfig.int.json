@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "out-int",
+    "rootDir": "src",
+    "types": ["node", "mocha"]
+  },
+  "include": [
+    "src/tests/integration/**/*.ts",
+    "src/tools/**/*.ts",
+    "src/utils/**/*.ts",
+    "src/ibmiConnection.ts",
+    "src/types.ts"
+  ]
+}

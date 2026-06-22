@@ -27,6 +27,12 @@ import { GetDataAreaTool } from './tools/getDataArea.js';
 import { ListSpoolFilesTool } from './tools/listSpoolFiles.js';
 import { GetFileFieldsTool } from './tools/getFileFields.js';
 import { GetLibraryListTool } from './tools/getLibraryList.js';
+import { SearchSourceMembersTool } from './tools/searchSourceMembers.js';
+import { SearchIfsTool } from './tools/searchIfs.js';
+import { GetMessageDescriptionTool } from './tools/getMessageDescription.js';
+import { GetProgramInfoTool } from './tools/getProgramInfo.js';
+import { ListUserProfilesTool } from './tools/listUserProfiles.js';
+import { GetOutputQueueInfoTool } from './tools/getOutputQueueInfo.js';
 
 const SERVER_NAME = 'ibm-iagentx';
 const OLD_SERVER_NAME = 'dk-ibmi-mcp'; // legacy key — removed from configs on first run
@@ -435,8 +441,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.lm.registerTool('ibmi_check_object',         new CheckObjectTool()),
     vscode.lm.registerTool('ibmi_get_data_area',        new GetDataAreaTool()),
     vscode.lm.registerTool('ibmi_list_spool_files',     new ListSpoolFilesTool()),
-    vscode.lm.registerTool('ibmi_get_file_fields',      new GetFileFieldsTool()),
-    vscode.lm.registerTool('ibmi_get_library_list',     new GetLibraryListTool()),
+    vscode.lm.registerTool('ibmi_get_file_fields',          new GetFileFieldsTool()),
+    vscode.lm.registerTool('ibmi_get_library_list',         new GetLibraryListTool()),
+    vscode.lm.registerTool('ibmi_search_source_members',    new SearchSourceMembersTool()),
+    vscode.lm.registerTool('ibmi_search_ifs',               new SearchIfsTool()),
+    vscode.lm.registerTool('ibmi_get_message_description',  new GetMessageDescriptionTool()),
+    vscode.lm.registerTool('ibmi_get_program_info',         new GetProgramInfoTool()),
+    vscode.lm.registerTool('ibmi_list_user_profiles',       new ListUserProfilesTool()),
+    vscode.lm.registerTool('ibmi_get_output_queue_info',    new GetOutputQueueInfoTool()),
   ];
   context.subscriptions.push(...lmTools);
 

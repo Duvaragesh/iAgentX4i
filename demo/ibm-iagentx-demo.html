@@ -1,0 +1,2254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IBM iAgentX — AI for IBM i</title>
+<style>
+  :root {
+    --ibm-blue: #0043CE;
+    --ibm-blue-light: #4589FF;
+    --ibm-blue-dark: #001D6C;
+    --ibm-green: #00a550;
+    --ibm-green-light: #42be65;
+    --ibm-cyan: #00B0E9;
+    --vscode-dark: #1e1e1e;
+    --vscode-darker: #141414;
+    --vscode-sidebar: #252526;
+    --vscode-bg: #1e1e1e;
+    --vscode-border: #3e3e3e;
+    --text-primary: #f0f0f0;
+    --text-secondary: #a8a8a8;
+    --text-muted: #6f6f6f;
+    --accent-gold: #f1c21b;
+    --accent-red: #da1e28;
+    --accent-purple: #8a3ffc;
+    --card-bg: #2a2a2a;
+    --card-border: #3a3a3a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #000;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    cursor: default;
+  }
+
+  /* ── SLIDESHOW WRAPPER ── */
+  #presentation {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 48px 64px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(.4,0,.2,1);
+    transform: translateX(60px);
+    background: var(--vscode-darker);
+    overflow: hidden;
+  }
+  .slide.active {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateX(0);
+  }
+  .slide.exit-left {
+    opacity: 0;
+    transform: translateX(-60px);
+    pointer-events: none;
+  }
+
+  /* ── PROGRESS BAR ── */
+  #progress-bar-wrap {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    z-index: 100;
+  }
+  #progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--ibm-blue), var(--ibm-cyan));
+    transition: width 0.5s ease;
+  }
+
+  /* ── NAV ── */
+  #nav {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 100;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 40px;
+    padding: 8px 20px;
+  }
+  .nav-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
+    line-height: 1;
+  }
+  .nav-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+  #slide-counter {
+    color: var(--text-secondary);
+    font-size: 13px;
+    min-width: 48px;
+    text-align: center;
+  }
+  .dot-nav {
+    display: flex;
+    gap: 6px;
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    transition: background 0.3s, transform 0.3s;
+    cursor: pointer;
+  }
+  .dot.active { background: var(--ibm-cyan); transform: scale(1.3); }
+
+  /* ── KEYBOARD HINT ── */
+  #kb-hint {
+    position: fixed;
+    top: 16px;
+    right: 20px;
+    color: rgba(255,255,255,0.25);
+    font-size: 12px;
+    z-index: 100;
+  }
+
+  /* ── COMMON ELEMENTS ── */
+  .slide-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--ibm-cyan);
+    font-weight: 600;
+    margin-bottom: 12px;
+    opacity: 0;
+    animation: none;
+  }
+  .slide.active .slide-label { animation: fadeUp 0.5s 0.1s ease forwards; }
+
+  h1 {
+    font-size: clamp(36px, 5vw, 72px);
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.1;
+    letter-spacing: -1px;
+  }
+  h2 {
+    font-size: clamp(24px, 3.5vw, 48px);
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+  }
+  h3 {
+    font-size: clamp(16px, 2vw, 24px);
+    font-weight: 600;
+    color: #fff;
+  }
+  p, li { color: var(--text-secondary); line-height: 1.6; }
+
+  .highlight { color: var(--ibm-cyan); }
+  .highlight-green { color: var(--ibm-green-light); }
+  .highlight-gold { color: var(--accent-gold); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.85); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes slideRight {
+    from { opacity: 0; transform: translateX(-30px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,176,233,0.3); }
+    50%       { box-shadow: 0 0 0 12px rgba(0,176,233,0); }
+  }
+  @keyframes drawLine {
+    from { stroke-dashoffset: 200; }
+    to   { stroke-dashoffset: 0; }
+  }
+  @keyframes termBlink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+  }
+  @keyframes typewriter {
+    from { width: 0; }
+    to   { width: 100%; }
+  }
+  @keyframes floatBadge {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-6px); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  @keyframes rotateIn {
+    from { opacity: 0; transform: rotateY(-15deg) translateX(-20px); }
+    to   { opacity: 1; transform: rotateY(0) translateX(0); }
+  }
+  @keyframes countUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .anim-delay-1 { animation-delay: 0.2s !important; }
+  .anim-delay-2 { animation-delay: 0.4s !important; }
+  .anim-delay-3 { animation-delay: 0.6s !important; }
+  .anim-delay-4 { animation-delay: 0.8s !important; }
+  .anim-delay-5 { animation-delay: 1.0s !important; }
+  .anim-delay-6 { animation-delay: 1.2s !important; }
+
+  /* ── GRID BG ── */
+  .grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,67,206,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,67,206,0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+  }
+  .glow-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+  }
+
+  /* ═══════════════════════════════════════════════
+     SLIDE 0 — HOOK
+  ═══════════════════════════════════════════════ */
+  #slide-0 {
+    background: #000;
+    justify-content: center;
+    align-items: center;
+  }
+  .hook-terminal {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    background: var(--vscode-dark);
+    border: 1px solid var(--vscode-border);
+    border-radius: 14px;
+    padding: 36px 44px;
+    min-width: 600px;
+    max-width: 720px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.8);
+    opacity: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .slide.active .hook-terminal { animation: scaleIn 0.5s 0.2s ease forwards; }
+  .hook-line {
+    font-size: 13.5px;
+    line-height: 2.1;
+    opacity: 0;
+    white-space: nowrap;
+  }
+  .hook-ok   { color: var(--ibm-green-light); }
+  .hook-err  { color: var(--accent-red); padding-left: 20px; }
+  .hook-cmd  { color: #fff; }
+  .hook-dim  { color: var(--text-muted); }
+  .slide.active .hook-line:nth-child(1)  { animation: slideRight 0.35s 0.5s  ease forwards; }
+  .slide.active .hook-line:nth-child(2)  { animation: slideRight 0.35s 0.85s ease forwards; }
+  .slide.active .hook-line:nth-child(3)  { animation: slideRight 0.35s 1.15s ease forwards; }
+  .slide.active .hook-line:nth-child(4)  { animation: slideRight 0.35s 1.35s ease forwards; }
+  .slide.active .hook-line:nth-child(5)  { animation: slideRight 0.35s 1.65s ease forwards; }
+  .slide.active .hook-line:nth-child(6)  { animation: slideRight 0.35s 1.85s ease forwards; }
+  .slide.active .hook-line:nth-child(7)  { animation: slideRight 0.35s 2.15s ease forwards; }
+  .slide.active .hook-line:nth-child(8)  { animation: slideRight 0.35s 2.35s ease forwards; }
+  .slide.active .hook-line:nth-child(9)  { animation: slideRight 0.35s 2.65s ease forwards; }
+  .hook-punchline {
+    margin-top: 44px;
+    text-align: center;
+    opacity: 0;
+    z-index: 1;
+    position: relative;
+  }
+  .slide.active .hook-punchline { animation: fadeUp 0.8s 3.2s ease forwards; }
+  .hook-punchline-main {
+    font-size: clamp(20px, 2.8vw, 34px);
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.5px;
+    line-height: 1.3;
+  }
+  .hook-punchline-sub {
+    margin-top: 10px;
+    font-size: 15px;
+    color: var(--text-muted);
+  }
+  .hook-punchline-sub .hook-until {
+    color: var(--ibm-cyan);
+    font-weight: 600;
+  }
+
+  /* ═══════════════════════════════════════════════
+     SLIDE 1 — TITLE
+  ═══════════════════════════════════════════════ */
+  #slide-1 {
+    background: radial-gradient(ellipse at 30% 40%, #001d6c 0%, #000510 60%);
+    text-align: center;
+  }
+  #slide-1 .glow-orb.a {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,67,206,0.35) 0%, transparent 70%);
+    top: -150px; left: -100px;
+  }
+  #slide-1 .glow-orb.b {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(0,176,233,0.2) 0%, transparent 70%);
+    bottom: -100px; right: -80px;
+  }
+  #slide-1 .glow-orb.c {
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(0,165,80,0.15) 0%, transparent 70%);
+    bottom: 20%; right: 30%;
+  }
+  .title-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    opacity: 0;
+  }
+  .slide.active .title-logo { animation: scaleIn 0.7s 0.2s ease forwards; }
+  .ibm-badge {
+    background: var(--ibm-blue);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+  .x-badge {
+    font-size: 56px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--ibm-cyan), var(--ibm-green-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+  .title-main {
+    opacity: 0;
+    font-size: clamp(48px, 7vw, 96px);
+    letter-spacing: -3px;
+  }
+  .slide.active .title-main { animation: fadeUp 0.8s 0.4s ease forwards; }
+  .title-gradient {
+    background: linear-gradient(135deg, #fff 30%, var(--ibm-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .title-subtitle {
+    font-size: clamp(14px, 2vw, 20px);
+    color: var(--text-secondary);
+    margin-top: 16px;
+    opacity: 0;
+    max-width: 600px;
+  }
+  .slide.active .title-subtitle { animation: fadeUp 0.8s 0.7s ease forwards; }
+  .version-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 32px;
+    padding: 6px 16px;
+    background: rgba(0,176,233,0.1);
+    border: 1px solid rgba(0,176,233,0.3);
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--ibm-cyan);
+    opacity: 0;
+  }
+  .slide.active .version-badge { animation: fadeUp 0.6s 1s ease forwards; }
+  .version-badge .dot-live {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--ibm-green);
+    animation: pulse-glow 2s infinite;
+  }
+
+  /* Terminal animation on title */
+  .terminal-preview {
+    position: absolute;
+    right: 8%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 340px;
+    background: var(--vscode-dark);
+    border: 1px solid var(--vscode-border);
+    border-radius: 10px;
+    overflow: hidden;
+    opacity: 0;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  }
+  .slide.active .terminal-preview { animation: rotateIn 0.8s 1.2s ease forwards; }
+  .terminal-bar {
+    background: var(--vscode-sidebar);
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--vscode-border);
+  }
+  .tbar-dot { width: 11px; height: 11px; border-radius: 50%; }
+  .tbar-dot.r { background: #ff5f57; }
+  .tbar-dot.y { background: #ffbd2e; }
+  .tbar-dot.g { background: #28c840; }
+  .tbar-title { color: var(--text-muted); font-size: 12px; margin-left: 6px; }
+  .terminal-body {
+    padding: 16px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .t-prompt { color: var(--ibm-green); }
+  .t-cmd { color: #fff; }
+  .t-tool { color: var(--ibm-cyan); }
+  .t-result { color: var(--text-secondary); }
+  .t-cursor {
+    display: inline-block;
+    width: 8px; height: 14px;
+    background: var(--ibm-cyan);
+    vertical-align: middle;
+    animation: termBlink 1s infinite;
+  }
+
+  /* ═══════════════════════════════════════════════
+     SLIDE 2 — CHALLENGE
+  ═══════════════════════════════════════════════ */
+  #slide-2 {
+    background: radial-gradient(ellipse at 70% 20%, #1a0030 0%, #0a0010 60%);
+    align-items: flex-start;
+  }
+  #slide-2 .glow-orb.a {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(138,63,252,0.2) 0%, transparent 70%);
+    top: -100px; right: -50px;
+  }
+  .audience-q {
+    font-size: clamp(18px, 2.8vw, 32px);
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, rgba(138,63,252,0.2), rgba(0,176,233,0.1));
+    border-left: 4px solid var(--accent-purple);
+    padding: 20px 28px;
+    border-radius: 0 12px 12px 0;
+    max-width: 900px;
+    line-height: 1.4;
+    opacity: 0;
+    margin-bottom: 32px;
+  }
+  .slide.active .audience-q { animation: fadeUp 0.7s 0.2s ease forwards; }
+
+  .problem-cards {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    max-width: 1100px;
+  }
+  .problem-card {
+    flex: 1;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+  }
+  .slide.active .problem-card:nth-child(1) { animation: fadeUp 0.6s 0.5s ease forwards; }
+  .slide.active .problem-card:nth-child(2) { animation: fadeUp 0.6s 0.75s ease forwards; }
+  .slide.active .problem-card:nth-child(3) { animation: fadeUp 0.6s 1.0s ease forwards; }
+  .problem-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-red), #ff832b);
+  }
+  .problem-card.p2::before { background: linear-gradient(90deg, var(--accent-purple), #4589FF); }
+  .problem-card.p3::before { background: linear-gradient(90deg, var(--accent-gold), #ff832b); }
+  .prob-icon {
+    font-size: 32px;
+    margin-bottom: 14px;
+    display: block;
+  }
+  .prob-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+  .prob-desc {
+    font-size: 13.5px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .cost-pill {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 3px 10px;
+    background: rgba(241,194,27,0.15);
+    border: 1px solid rgba(241,194,27,0.4);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--accent-gold);
+    font-weight: 600;
+  }
+
+  /* ═══════════════════════════════════════════════
+     SLIDE 3 — MARKET GAP
+  ═══════════════════════════════════════════════ */
+  #slide-3 {
+    background: radial-gradient(ellipse at 20% 80%, #001530 0%, #050a14 60%);
+  }
+  .comp-table-wrap {
+    width: 100%;
+    max-width: 1050px;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .comp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .comp-table th {
+    background: rgba(0,67,206,0.25);
+    color: #fff;
+    padding: 14px 18px;
+    text-align: left;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .comp-table th:last-child {
+    background: rgba(0,165,80,0.25);
+    color: var(--ibm-green-light);
+  }
+  .comp-table td {
+    padding: 13px 18px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    color: var(--text-secondary);
+  }
+  .comp-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+  .comp-table td:first-child { color: #fff; font-weight: 500; }
+  .comp-table td:last-child {
+    color: var(--ibm-green-light);
+    font-weight: 600;
+    background: rgba(0,165,80,0.06);
+  }
+  .comp-table tr {
+    opacity: 0;
+    transition: background 0.2s;
+  }
+  .comp-table tr:hover td { background: rgba(255,255,255,0.04); }
+  .slide.active .comp-table thead tr { animation: slideRight 0.5s 0.2s ease forwards; }
+  .slide.active .comp-table tbody tr:nth-child(1) { animation: slideRight 0.5s 0.4s ease forwards; }
+  .slide.active .comp-table tbody tr:nth-child(2) { animation: slideRight 0.5s 0.55s ease forwards; }
+  .slide.active .comp-table tbody tr:nth-child(3) { animation: slideRight 0.5s 0.7s ease forwards; }
+  .slide.active .comp-table tbody tr:nth-child(4) { animation: slideRight 0.5s 0.85s ease forwards; }
+
+  .check { color: var(--ibm-green-light); font-size: 16px; }
+  .cross { color: var(--accent-red); font-size: 16px; }
+  .partial { color: var(--accent-gold); font-size: 14px; }
+  .tagline-bar {
+    margin-top: 24px;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, rgba(0,165,80,0.15), rgba(0,176,233,0.1));
+    border: 1px solid rgba(0,165,80,0.3);
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    opacity: 0;
+    width: 100%;
+    max-width: 1050px;
+    text-align: center;
+  }
+  .slide.active .tagline-bar { animation: fadeUp 0.6s 1.2s ease forwards; }
+
+  /* ═══════════════════════════════════════════════
+     SLIDE 4 — INTRODUCING iAgentX
+  ═══════════════════════════════════════════════ */
+  #slide-4 {
+    background: radial-gradient(ellipse at 50% 0%, #001d6c 0%, #000510 55%);
+    text-align: center;
+  }
+  #slide-4 .glow-orb.a {
+    width: 700px; height: 400px;
+    background: radial-gradient(ellipse, rgba(0,67,206,0.3) 0%, transparent 70%);
+    top: -100px; left: 50%; transform: translateX(-50%);
+  }
+  .intro-headline {
+    opacity: 0;
+    max-width: 800px;
+  }
+  .slide.active .intro-headline { animation: fadeUp 0.7s 0.2s ease forwards; }
+  .pillars {
+    display: flex;
+    gap: 24px;
+    margin-top: 40px;
+    width: 100%;
+    max-width: 1000px;
+  }
+  .pillar {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 28px 24px;
+    text-align: center;
+    opacity: 0;
+    transition: border-color 0.3s, background 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .pillar:hover {
+    border-color: var(--ibm-cyan);
+    background: rgba(0,176,233,0.06);
+  }
+  .slide.active .pillar:nth-child(1) { animation: fadeUp 0.6s 0.4s ease forwards; }
+  .slide.active .pillar:nth-child(2) { animation: fadeUp 0.6s 0.6s ease forwards; }
+  .slide.active .pillar:nth-child(3) { animation: fadeUp 0.6s 0.8s ease forwards; }
+  .pillar-icon {
+    font-size: 40px;
+    margin-bottom: 16px;
+    display: block;
+    animation: floatBadge 3s ease-in-out infinite;
+  }
+  .pillar-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+  .pillar-desc {
+    font-size: 13.5px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .oss-note {
+    margin-top: 28px;
+    font-size: 13px;
+    color: var(--text-muted);
+    opacity: 0;
+  }
+  .slide.active .oss-note { animation: fadeIn 0.6s 1.1s ease forwards; }
+  .oss-dot { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: var(--text-muted); vertical-align: middle; margin: 0 8px; }
+
+  /* ═══════════════════════════════════════════════
+     SLIDE 5 — ARCHITECTURE
+  ═══════════════════════════════════════════════ */
+  #slide-5 {
+    background: radial-gradient(ellipse at 80% 20%, #001030 0%, #050810 60%);
+    flex-direction: row;
+    gap: 48px;
+    align-items: center;
+    justify-content: center;
+  }
+  .arch-left {
+    flex: 1;
+    max-width: 480px;
+  }
+  .arch-right {
+    flex: 1;
+    max-width: 520px;
+  }
+  .arch-diagram {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .arch-layer {
+    width: 100%;
+    border-radius: 12px;
+    padding: 16px 20px;
+    position: relative;
+    opacity: 0;
+    transition: transform 0.2s;
+  }
+  .arch-layer:hover { transform: scale(1.02); }
+  .slide.active .arch-layer:nth-child(1) { animation: fadeUp 0.5s 0.3s ease forwards; }
+  .slide.active .arch-layer:nth-child(3) { animation: fadeUp 0.5s 0.55s ease forwards; }
+  .slide.active .arch-layer:nth-child(5) { animation: fadeUp 0.5s 0.8s ease forwards; }
+  .slide.active .arch-layer:nth-child(7) { animation: fadeUp 0.5s 1.05s ease forwards; }
+  .arch-layer.l-agents {
+    background: linear-gradient(135deg, rgba(0,67,206,0.3), rgba(0,176,233,0.2));
+    border: 1px solid rgba(0,176,233,0.4);
+  }
+  .arch-layer.l-iagentx {
+    background: linear-gradient(135deg, rgba(0,165,80,0.2), rgba(0,176,233,0.15));
+    border: 1px solid rgba(0,165,80,0.4);
+  }
+  .arch-layer.l-codeibmi {
+    background: linear-gradient(135deg, rgba(0,67,206,0.15), rgba(138,63,252,0.1));
+    border: 1px solid rgba(138,63,252,0.3);
+  }
+  .arch-layer.l-ibmi {
+    background: linear-gradient(135deg, rgba(0,165,80,0.15), rgba(0,100,40,0.2));
+    border: 1px solid rgba(0,165,80,0.3);
+  }
+  .arch-layer-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  .arch-layer-sub {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .arch-agents-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .agent-chip {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(0,176,233,0.15);
+    border: 1px solid rgba(0,176,233,0.3);
+    color: var(--ibm-cyan);
+  }
+  .agent-chip.g { background: rgba(0,165,80,0.15); border-color: rgba(0,165,80,0.3); color: var(--ibm-green-light); }
+  .agent-chip.p { background: rgba(138,63,252,0.15); border-color: rgba(138,63,252,0.3); color: #a56eff; }
+
+  .arch-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0;
+    width: 100%;
+    padding: 4px 0;
+  }
+  .slide.active .arch-connector:nth-child(2) { animation: fadeIn 0.4s 0.45s ease forwards; }
+  .slide.active .arch-connector:nth-child(4) { animation: fadeIn 0.4s 0.7s ease forwards; }
+  .slide.active .arch-connector:nth-child(6) { animation: fadeIn 0.4s 0.95s ease forwards; }
+  .arch-line {
+    width: 2px;
+    height: 20px;
+    background: linear-gradient(180deg, rgba(0,176,233,0.6), rgba(0,176,233,0.2));
+  }
+  .arch-label {
+    font-size: 10px;
+    color: var(--ibm-cyan);
+    letter-spacing: 0.5px;
+    padding: 2px 0;
+  }
+  .arch-arrow {
+    width: 0; height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid rgba(0,176,233,0.5);
+  }
+
+  .arch-callouts {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    opacity: 0;
+  }
+  .slide.active .arch-callouts { animation: fadeIn 0.8s 1.3s ease forwards; }
+  .callout {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+  }
+  .callout-icon { font-size: 20px; flex-shrink: 0; }
+  .callout-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+  .callout-text strong { color: #fff; }
+
+  /* ═══════════════════════════════════════════════
+     SLIDE 6 — SECURITY
+  ═══════════════════════════════════════════════ */
+  #slide-6 {
+    background: radial-gradient(ellipse at 50% 0%, #001a10 0%, #030808 55%);
+  }
+  .sec-audience-q {
+    font-size: clamp(16px, 2.2vw, 26px);
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, rgba(0,165,80,0.15), rgba(0,176,233,0.08));
+    border-left: 4px solid var(--ibm-green);
+    padding: 16px 24px;
+    border-radius: 0 10px 10px 0;
+    max-width: 900px;
+    width: 100%;
+    margin-bottom: 28px;
+    opacity: 0;
+  }
+  .slide.active .sec-audience-q { animation: fadeUp 0.6s 0.2s ease forwards; }
+  .sec-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    width: 100%;
+    max-width: 1100px;
+  }
+  .sec-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    opacity: 0;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .sec-card:hover { transform: translateY(-3px); border-color: var(--ibm-green); }
+  .sec-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--ibm-green), var(--ibm-cyan));
+  }
+  .slide.active .sec-card:nth-child(1) { animation: fadeUp 0.5s 0.4s ease forwards; }
+  .slide.active .sec-card:nth-child(2) { animation: fadeUp 0.5s 0.55s ease forwards; }
+  .slide.active .sec-card:nth-child(3) { animation: fadeUp 0.5s 0.7s ease forwards; }
+  .slide.active .sec-card:nth-child(4) { animation: fadeUp 0.5s 0.85s ease forwards; }
+  .slide.active .sec-card:nth-child(5) { animation: fadeUp 0.5s 1.0s ease forwards; }
+  .slide.active .sec-card:nth-child(6) { animation: fadeUp 0.5s 1.15s ease forwards; }
+  .slide.active .sec-links { animation: fadeUp 0.5s 1.35s ease forwards; }
+  .sec-icon { font-size: 26px; margin-bottom: 10px; }
+  .sec-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+  .sec-desc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; }
+  .sec-tag {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 2px 8px;
+    background: rgba(0,165,80,0.15);
+    border: 1px solid rgba(0,165,80,0.3);
+    border-radius: 10px;
+    font-size: 11px;
+    color: var(--ibm-green-light);
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+  }
+
+  /* ═══════════════════════════════════════════════
+     SLIDE 7 — TOOLS
+  ═══════════════════════════════════════════════ */
+  #slide-7 {
+    background: radial-gradient(ellipse at 0% 50%, #001030 0%, #050810 60%);
+    flex-direction: row;
+    gap: 48px;
+    align-items: center;
+  }
+  .tools-left { flex: 0 0 300px; }
+  .tools-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .tools-headline { opacity: 0; }
+  .slide.active .tools-headline { animation: fadeUp 0.6s 0.2s ease forwards; }
+  .tools-sub { opacity: 0; margin-top: 12px; font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+  .slide.active .tools-sub { animation: fadeUp 0.6s 0.4s ease forwards; }
+  .tools-count {
+    margin-top: 24px;
+    font-size: 72px;
+    font-weight: 900;
+    color: transparent;
+    background: linear-gradient(135deg, var(--ibm-blue-light), var(--ibm-cyan));
+    -webkit-background-clip: text;
+    background-clip: text;
+    line-height: 1;
+    opacity: 0;
+  }
+  .slide.active .tools-count { animation: countUp 0.6s 0.6s ease forwards; }
+  .tools-count-label { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+
+  .tool-category {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 12px 16px;
+    opacity: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .slide.active .tool-category:nth-child(1) { animation: slideRight 0.5s 0.3s ease forwards; }
+  .slide.active .tool-category:nth-child(2) { animation: slideRight 0.5s 0.45s ease forwards; }
+  .slide.active .tool-category:nth-child(3) { animation: slideRight 0.5s 0.6s ease forwards; }
+  .slide.active .tool-category:nth-child(4) { animation: slideRight 0.5s 0.75s ease forwards; }
+  .slide.active .tool-category:nth-child(5) { animation: slideRight 0.5s 0.9s ease forwards; }
+  .slide.active .tool-category:nth-child(6) { animation: slideRight 0.5s 1.05s ease forwards; }
+  .tool-cat-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .tool-cat-name { font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .tool-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .tool-chip {
+    padding: 2px 9px;
+    background: rgba(0,67,206,0.15);
+    border: 1px solid rgba(69,137,255,0.2);
+    border-radius: 12px;
+    font-size: 11px;
+    color: var(--ibm-blue-light);
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    transition: background 0.2s;
+  }
+  .tool-chip:hover { background: rgba(0,67,206,0.3); }
+  .tool-chip.green { background: rgba(0,165,80,0.12); border-color: rgba(0,165,80,0.25); color: var(--ibm-green-light); }
+  .tool-chip.cyan  { background: rgba(0,176,233,0.12); border-color: rgba(0,176,233,0.25); color: var(--ibm-cyan); }
+  .tool-chip.purple{ background: rgba(138,63,252,0.12); border-color: rgba(138,63,252,0.25); color: #a56eff; }
+  .tool-chip.gold  { background: rgba(241,194,27,0.12); border-color: rgba(241,194,27,0.25); color: var(--accent-gold); }
+
+  /* ═══════════════════════════════════════════════
+     SLIDE 8 — DEMO 1
+  ═══════════════════════════════════════════════ */
+  #slide-8 {
+    background: radial-gradient(ellipse at 80% 80%, #001a2e 0%, #030810 60%);
+    flex-direction: row;
+    gap: 40px;
+    align-items: stretch;
+  }
+  .demo-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .demo-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .demo-q {
+    font-size: clamp(14px, 1.8vw, 20px);
+    font-weight: 700;
+    color: #fff;
+    background: rgba(0,176,233,0.08);
+    border-left: 3px solid var(--ibm-cyan);
+    padding: 12px 18px;
+    border-radius: 0 8px 8px 0;
+    line-height: 1.4;
+    opacity: 0;
+  }
+  .slide.active .demo-q { animation: fadeUp 0.5s 0.15s ease forwards; }
+  .demo-scenario {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 16px 20px;
+    opacity: 0;
+  }
+  .slide.active .demo-scenario { animation: fadeUp 0.5s 0.35s ease forwards; }
+  .demo-scenario-title { font-size: 12px; font-weight: 700; color: var(--ibm-cyan); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .demo-scenario li {
+    font-size: 13px;
+    color: var(--text-secondary);
+    list-style: none;
+    padding: 3px 0;
+    padding-left: 16px;
+    position: relative;
+  }
+  .demo-scenario li::before { content: '→'; position: absolute; left: 0; color: var(--ibm-blue-light); }
+  .demo-scenario li code { color: var(--ibm-cyan); font-family: monospace; }
+
+  .chat-window {
+    background: var(--vscode-dark);
+    border: 1px solid var(--vscode-border);
+    border-radius: 12px;
+    overflow: hidden;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    opacity: 0;
+  }
+  .slide.active .chat-window { animation: fadeIn 0.6s 0.2s ease forwards; }
+  .chat-bar {
+    background: var(--vscode-sidebar);
+    border-bottom: 1px solid var(--vscode-border);
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chat-bar-icon { font-size: 14px; }
+  .chat-bar-title { font-size: 12px; color: var(--text-secondary); }
+  .chat-msgs {
+    flex: 1;
+    padding: 14px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 12px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+  }
+  .chat-msg-user {
+    background: rgba(0,67,206,0.2);
+    border: 1px solid rgba(0,67,206,0.3);
+    border-radius: 8px 8px 2px 8px;
+    padding: 10px 14px;
+    color: #fff;
+    line-height: 1.5;
+    align-self: flex-end;
+    max-width: 90%;
+    opacity: 0;
+  }
+  .chat-msg-tool {
+    background: rgba(0,176,233,0.08);
+    border: 1px solid rgba(0,176,233,0.2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--ibm-cyan);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    opacity: 0;
+  }
+  .chat-msg-ai {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 2px 8px 8px 8px;
+    padding: 10px 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    opacity: 0;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 11.5px;
+  }
+  .result-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin-top: 6px;
+  }
+  .result-table th {
+    color: var(--ibm-cyan);
+    text-align: left;
+    padding: 4px 8px;
+    border-bottom: 1px solid rgba(0,176,233,0.2);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .result-table td { padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .result-table td:nth-child(2), .result-table td:nth-child(4) { color: var(--accent-gold); text-align: right; }
+  .tools-used-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(0,165,80,0.06);
+    border-top: 1px solid rgba(0,165,80,0.15);
+    opacity: 0;
+  }
+  .tools-used-label { font-size: 11px; color: var(--text-muted); }
+  .tool-badge {
+    padding: 2px 8px;
+    background: rgba(0,165,80,0.15);
+    border: 1px solid rgba(0,165,80,0.3);
+    border-radius: 10px;
+    font-size: 10px;
+    color: var(--ibm-green-light);
+    font-family: monospace;
+  }
+
+  /* anim timings for chat messages */
+  .slide.active .chat-msg-user.m1   { animation: fadeUp 0.4s 0.5s ease forwards; }
+  .slide.active .chat-msg-tool.m2   { animation: fadeUp 0.4s 0.95s ease forwards; }
+  .slide.active .chat-msg-ai.m3     { animation: fadeUp 0.4s 1.4s ease forwards; }
+  .slide.active .tools-used-row.mu  { animation: fadeIn 0.4s 1.8s ease forwards; }
+
+  /* ═══════════════════════════════════════════════
+     SLIDE 9 — DEMO 2
+  ═══════════════════════════════════════════════ */
+  #slide-9 {
+    background: radial-gradient(ellipse at 20% 20%, #0d001a 0%, #030510 55%);
+    flex-direction: row;
+    gap: 40px;
+    align-items: stretch;
+  }
+
+  /* ═══════════════════════════════════════════════
+     SLIDE 10 — COMPARISON
+  ═══════════════════════════════════════════════ */
+  #slide-10 {
+    background: radial-gradient(ellipse at 50% 100%, #001030 0%, #030810 55%);
+  }
+  .compare-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    width: 100%;
+    max-width: 1050px;
+    margin-top: 24px;
+  }
+  .compare-panel {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 28px 24px;
+    opacity: 0;
+  }
+  .compare-panel.before {
+    border: 1px solid rgba(218,30,40,0.3);
+  }
+  .compare-panel.after {
+    border: 1px solid rgba(0,165,80,0.4);
+    background: rgba(0,165,80,0.04);
+  }
+  .slide.active .compare-panel.before { animation: fadeUp 0.6s 0.3s ease forwards; }
+  .slide.active .compare-panel.after  { animation: fadeUp 0.6s 0.5s ease forwards; }
+  .compare-header {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .compare-header.bad { color: var(--accent-red); }
+  .compare-header.good { color: var(--ibm-green-light); }
+  .compare-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .compare-item-icon { font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+
+  .stat-row {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 28px;
+    width: 100%;
+    max-width: 1050px;
+    opacity: 0;
+  }
+  .slide.active .stat-row { animation: fadeUp 0.6s 0.8s ease forwards; }
+  .stat-box {
+    flex: 1;
+    text-align: center;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .stat-num {
+    font-size: 36px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--ibm-cyan), var(--ibm-green-light));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-label { font-size: 12px; color: var(--text-muted); }
+
+  /* ═══════════════════════════════════════════════
+     SLIDE 11 — GET STARTED
+  ═══════════════════════════════════════════════ */
+  #slide-11 {
+    background: radial-gradient(ellipse at 50% 0%, #001d6c 0%, #000510 55%);
+    text-align: center;
+  }
+  #slide-11 .glow-orb.a {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,165,80,0.15) 0%, transparent 70%);
+    bottom: -200px; left: 50%; transform: translateX(-50%);
+  }
+  .steps-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    margin: 32px 0;
+    max-width: 850px;
+  }
+  .step {
+    flex: 1;
+    text-align: center;
+    opacity: 0;
+    position: relative;
+  }
+  .step-connector {
+    flex: 0 0 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 24px;
+    opacity: 0;
+  }
+  .step-connector-line {
+    height: 2px;
+    width: 100%;
+    background: linear-gradient(90deg, rgba(0,176,233,0.4), rgba(0,176,233,0.4));
+  }
+  .slide.active .step:nth-child(1) { animation: fadeUp 0.5s 0.4s ease forwards; }
+  .slide.active .step-connector:nth-child(2) { animation: fadeIn 0.4s 0.7s ease forwards; }
+  .slide.active .step:nth-child(3) { animation: fadeUp 0.5s 0.8s ease forwards; }
+  .slide.active .step-connector:nth-child(4) { animation: fadeIn 0.4s 1.1s ease forwards; }
+  .slide.active .step:nth-child(5) { animation: fadeUp 0.5s 1.2s ease forwards; }
+  .step-num {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--ibm-blue), var(--ibm-cyan));
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    box-shadow: 0 0 0 4px rgba(0,176,233,0.15);
+    animation: pulse-glow 2s infinite;
+  }
+  .step-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .step-desc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; }
+  .step-code {
+    margin-top: 8px;
+    padding: 4px 10px;
+    background: rgba(0,176,233,0.08);
+    border: 1px solid rgba(0,176,233,0.2);
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--ibm-cyan);
+    display: inline-block;
+  }
+
+  .link-row {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 8px;
+    opacity: 0;
+  }
+  .slide.active .link-row { animation: fadeUp 0.5s 1.5s ease forwards; }
+  .ext-link {
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.2s;
+  }
+  .ext-link:hover { transform: translateY(-2px); }
+  .ext-link.primary {
+    background: var(--ibm-blue);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .ext-link.secondary {
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+
+  .closing-tagline {
+    font-size: clamp(18px, 2.8vw, 32px);
+    font-weight: 700;
+    margin-top: 24px;
+    opacity: 0;
+  }
+  .slide.active .closing-tagline { animation: fadeUp 0.7s 1.8s ease forwards; }
+  .closing-tagline span { background: linear-gradient(135deg, var(--ibm-cyan), var(--ibm-green-light)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  /* ── COPY BUTTON ── */
+  .demo-prompt-box {
+    position: relative;
+  }
+  .copy-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0,176,233,0.12);
+    border: 1px solid rgba(0,176,233,0.25);
+    border-radius: 6px;
+    color: var(--ibm-cyan);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 3px 8px;
+    line-height: 1.4;
+    transition: background 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .copy-btn:hover { background: rgba(0,176,233,0.25); color: #fff; }
+  .copy-btn.copied { background: rgba(0,165,80,0.2); border-color: rgba(0,165,80,0.4); color: var(--ibm-green-light); }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div id="presentation">
+
+  <!-- ══════════════════ SLIDE -1 — BLANK ══════════════════ -->
+  <div class="slide active" id="slide-blank" style="background:#000;"></div>
+
+  <!-- ══════════════════ SLIDE 0 — HOOK ══════════════════ -->
+  <div class="slide" id="slide-0">
+    <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
+    <div class="hook-terminal">
+      <div class="hook-line hook-dim">$ ai --ask "explain my IBM i RPG code"</div>
+      <div class="hook-line hook-err">Error: No IBM i context found.</div>
+      <div class="hook-line hook-dim">$ ai --ask "read my open source member"</div>
+      <div class="hook-line hook-err">Error: Cannot access QCLLESRC. What is QCLLESRC?</div>
+      <div class="hook-line hook-dim">$ ai --ask "check the job log for CPF2110"</div>
+      <div class="hook-line hook-err">Error: Job logs? Is that a podcast?</div>
+      <div class="hook-line hook-dim">$ ai --ask "why is my DB2 query slow"</div>
+      <div class="hook-line hook-err">Error: I only know SQL. What is DB2 for i?</div>
+      <div class="hook-line" style="color:var(--accent-gold); margin-top:8px;">$ # Yeah. That's the problem. →</div>
+    </div>
+    <div class="hook-punchline">
+      <div class="hook-punchline-main">Your AI is brilliant. Just completely blind to IBM&nbsp;i.</div>
+      <div class="hook-punchline-sub"><span class="hook-until">Until now.</span></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ SLIDE 1 — TITLE ══════════════════ -->
+  <div class="slide" id="slide-1">
+    <div class="grid-bg"></div>
+    <div class="glow-orb a"></div>
+    <div class="glow-orb b"></div>
+    <div class="glow-orb c"></div>
+    <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
+
+    <div style="text-align:center; z-index:1; flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+      <img src="../images/logo.png" alt="iAgentX" style="height:80px;margin-bottom:16px;opacity:0.95;">
+      <div class="title-logo">
+        <span class="ibm-badge">IBM</span>
+        <span style="font-size:42px; font-weight:900; color:#fff; letter-spacing:-2px;">iAgent</span>
+        <span class="x-badge">X</span>
+      </div>
+
+      <h1 class="title-main">
+        <span class="title-gradient">Bring AI Intelligence<br>to Your IBM i</span>
+      </h1>
+      <p class="title-subtitle">
+        Connect Claude Code, GitHub Copilot &amp; IBM Bob directly to your IBM i system —
+        source members, DB2, job logs and more. Free. Secure. Instant.
+      </p>
+      <div class="version-badge">
+        <span class="dot-live"></span>
+        Live now on VS Code Marketplace
+      </div>
+    </div>
+
+    <!-- Terminal preview on the right -->
+    <div class="terminal-preview" style="z-index:1;">
+      <div class="terminal-bar">
+        <span class="tbar-dot r"></span>
+        <span class="tbar-dot y"></span>
+        <span class="tbar-dot g"></span>
+        <span class="tbar-title">Claude Code — IBM iAgentX</span>
+      </div>
+      <div class="terminal-body">
+        <div><span class="t-prompt">›</span> <span class="t-cmd">List all source files in DK</span></div>
+        <div style="margin-top:4px; color:#555;">──────────────────────────</div>
+        <div><span class="t-tool">⚡ ibmi_list_source_files</span></div>
+        <div class="t-result">  QCLLESRC  · 42 members</div>
+        <div class="t-result">  QRPGLESRC · 87 members</div>
+        <div class="t-result">  QSQLSRC   · 15 members</div>
+        <div style="margin-top:4px; color:#555;">──────────────────────────</div>
+        <div><span class="t-prompt">›</span> <span class="t-cmd">Explain BATCHFTP</span></div>
+        <div><span class="t-tool">⚡ ibmi_get_source_member</span></div>
+        <div class="t-result">  Reading QCLLESRC/BATCHFTP…</div>
+        <div class="t-result" style="color:#42be65;">  ✓ 247 lines loaded</div>
+        <div><span class="t-cursor"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ SLIDE 2 — CHALLENGE ══════════════════ -->
+  <div class="slide" id="slide-2">
+    <div class="grid-bg"></div>
+    <div class="glow-orb a"></div>
+    <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
+
+    <div style="width:100%; max-width:1100px; z-index:1; display:flex; flex-direction:column; align-items:flex-start;">
+      <div class="slide-label">The Challenge</div>
+      <h2 style="margin-bottom:24px; opacity:0;" class="slide-h2">Why AI can't help IBM&nbsp;i developers<span class="highlight"> — yet.</span></h2>
+
+      <div class="audience-q">
+        💬 &nbsp;"When was the last time you asked your AI assistant about code running on IBM i… and it <em>actually</em> helped?"
+      </div>
+
+      <div class="problem-cards">
+        <div class="problem-card">
+          <span class="prob-icon">🤖</span>
+          <div class="prob-title">AI Agents Don't Know What They Don't Know</div>
+          <p class="prob-desc">Copilot can call Code for IBM i extension commands — but <strong style="color:#fff;">only if you tell it they exist</strong>. Without explicit prompting, it won't discover or use them. Claude Code and IBM Bob have no IBM i access at all.</p>
+        </div>
+        <div class="problem-card p2">
+          <span class="prob-icon">👁️</span>
+          <div class="prob-title">Open Files Are Invisible Too</div>
+          <p class="prob-desc">Files opened in VS Code from IBM i (QCLLESRC, IFS) are <strong style="color:#fff;">NOT in the working directory</strong>. Claude Code and IBM Bob cannot see them — only Copilot can, partially.</p>
+        </div>
+        <div class="problem-card p3">
+          <span class="prob-icon">💰</span>
+          <div class="prob-title">Premium Alternatives Cost More</div>
+          <p class="prob-desc">IBM Bob's IBM i integration feature is releasing <strong style="color:#fff;">June 24th</strong> — but at an additional cost on top of existing Bob pricing.</p>
+          <span class="cost-pill">+$20/month · $20 for 40 Bob coins</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ SLIDE 3 — MARKET GAP ══════════════════ -->
+  <div class="slide" id="slide-3">
+    <div class="grid-bg"></div>
+    <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
+
+    <div style="width:100%; max-width:1100px; z-index:1; display:flex; flex-direction:column; align-items:center;">
+      <div class="slide-label" style="align-self:flex-start;">Market Gap</div>
+      <h2 style="align-self:flex-start; margin-bottom:24px; opacity:0;" class="slide-h2">How do the options <span class="highlight">stack up?</span></h2>
+
+      <div class="comp-table-wrap">
+        <table class="comp-table">
+          <thead>
+            <tr>
+              <th>Capability</th>
+              <th>GitHub Copilot</th>
+              <th>Claude Code</th>
+              <th>IBM Bob <small style="opacity:0.7">(today)</small></th>
+              <th>IBM Bob <small style="opacity:0.7">(Jun 24+)</small></th>
+              <th>✦ iAgentX</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Reads IBM i source members</td>
+              <td><span class="partial">≈</span> <small style="color:#888">via extension</small><br><small style="color:#666;font-size:10px;">commands not in AI context</small></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span> <small style="color:#888">premium</small></td>
+              <td><span class="check">✓</span> Free</td>
+            </tr>
+            <tr>
+              <td>SQL / DB2 for i queries</td>
+              <td><span class="partial">≈</span> <small style="color:#888">via extension</small><br><small style="color:#666;font-size:10px;">commands not in AI context</small></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span> <small style="color:#888">premium</small></td>
+              <td><span class="check">✓</span> Free</td>
+            </tr>
+            <tr>
+              <td>Access open IFS / member editors</td>
+              <td><span class="partial">≈</span> <small style="color:#888">partial</small></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span> <small style="color:#888">premium</small></td>
+              <td><span class="check">✓</span> Free</td>
+            </tr>
+            <tr>
+              <td>Job logs, spool files, CL diagnostics</td>
+              <td><span class="partial">≈</span> <small style="color:#888">via extension</small><br><small style="color:#666;font-size:10px;">commands not in AI context</small></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="partial">?</span></td>
+              <td><span class="check">✓</span> Free</td>
+            </tr>
+            <tr>
+              <td>Proactive IBM i tool discovery <small style="color:#888">(no prompting needed)</small></td>
+              <td><span class="partial">≈</span> <small style="color:#888">needs explicit prompt</small></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="partial">?</span></td>
+              <td><span class="check">✓</span> Free</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tagline-bar">
+        ✦ &nbsp;iAgentX gives you the <strong>premium IBM i AI experience</strong> — today, for free.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ SLIDE 4 — INTRODUCING ══════════════════ -->
+  <div class="slide" id="slide-4">
+    <div class="grid-bg"></div>
+    <div class="glow-orb a"></div>
+    <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
+
+    <div style="z-index:1; display:flex; flex-direction:column; align-items:center; width:100%;">
+      <div class="slide-label">The Solution</div>
+      <div class="intro-headline">
+        <img src="../images/logo.png" alt="iAgentX" style="height:80px;margin-bottom:12px;opacity:0.95;display:block;margin-left:auto;margin-right:auto;">
+        <h2 style="text-align:center;">Meet <span class="highlight">IBM iAgentX</span></h2>
+        <p style="text-align:center; margin-top:10px; font-size:15px; max-width:650px; margin:10px auto 0;">A VS Code extension that bridges your AI coding tools directly into IBM i — with zero extra setup and no additional cost.</p>
+      </div>
+
+      <div class="pillars">
+        <div class="pillar">
+          <span class="pillar-icon">⚡</span>
+          <div class="pillar-title">Zero Setup</div>
+          <p class="pillar-desc">Install the extension and you're done. iAgentX auto-configures Claude Code, Copilot Chat, and IBM Bob on first launch — no manual MCP config required.</p>
+        </div>
+        <div class="pillar">
+          <span class="pillar-icon">🔗</span>
+          <div class="pillar-title">Reuses Your Connection</div>
+          <p class="pillar-desc">No extra credentials. iAgentX piggybacks on Code for IBM i's existing SSH session — the same connection you already use every day.</p>
+        </div>
+        <div class="pillar">
+          <span class="pillar-icon">🤖</span>
+          <div class="pillar-title">Works With All Your AI Tools</div>
+          <p class="pillar-desc">Claude Code CLI, GitHub Copilot Chat, IBM Bob — all three get IBM i superpowers simultaneously from a single extension.</p>
+        </div>
+      </div>
+
+      <p class="oss-note">
+        Open source <span class="oss-dot"></span> MIT License <span class="oss-dot"></span> Published by Duvaragesh <span class="oss-dot"></span> VS Code Marketplace
+      </p>
+    </div>
+  </div>
+
+  <!-- ══════════════════ SLIDE 5 — ARCHITECTURE ══════════════════ -->
+  <div class="slide" id="slide-5">
+    <div class="grid-bg"></div>
+    <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
+
+    <div class="arch-left" style="z-index:1;">
+      <div class="slide-label">Architecture</div>
+      <h2 style="opacity:0;" class="slide-h2-sm">How it <span class="highlight">all connects</span></h2>
+      <p style="margin-top:12px; font-size:13.5px; color:var(--text-secondary); line-height:1.7; opacity:0;" class="arch-para">
+        iAgentX runs a lightweight HTTP+SSE MCP server inside the VS Code extension host. AI agents call it over the loopback interface — it forwards requests through Code for IBM i's existing SSH session. No new credentials, no external exposure.
+      </p>
+
+      <div class="arch-callouts" style="margin-top:24px;">
+        <div class="callout">
+          <span class="callout-icon">🔒</span>
+          <p class="callout-text"><strong>Loopback only</strong> — server binds to <code style="color:var(--ibm-cyan);">127.0.0.1</code>, unreachable from outside your machine</p>
+        </div>
+        <div class="callout">
+          <span class="callout-icon">🔑</span>
+          <p class="callout-text"><strong>No extra credentials</strong> — reuses your Code for IBM i SSH session transparently</p>
+        </div>
+        <div class="callout">
+          <span class="callout-icon">⚙️</span>
+          <p class="callout-text"><strong>Auto-configures</strong> Claude Code, Copilot &amp; IBM Bob on first launch</p>
+        </div>
+        <div class="callout">
+          <span class="callout-icon">🪟</span>
+          <p class="callout-text"><strong>Shared across windows</strong> — one server instance serves all your VS Code windows</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-right" style="z-index:1;">
+      <div class="arch-diagram">
+
+        <!-- Layer 1: AI Agents -->
+        <div class="arch-layer l-agents">
+          <div class="arch-layer-title">AI Agents</div>
+          <div class="arch-agents-row">
+            <span class="agent-chip">Claude Code</span>
+            <span class="agent-chip g">Copilot Chat</span>
+            <span class="agent-chip p">IBM Bob</span>
+          </div>
+        </div>
+
+        <div class="arch-connector">
+          <div class="arch-line"></div>
+          <div class="arch-label">MCP over HTTP+SSE · 127.0.0.1:41927</div>
+          <div class="arch-arrow"></div>
+        </div>
+
+        <!-- Layer 2: iAgentX -->
+        <div class="arch-layer l-iagentx">
+          <div class="arch-layer-title">IBM iAgentX — VS Code Extension Host</div>
+          <div class="arch-layer-sub">29 purpose-built IBM i tools · JSON-RPC 2.0 dispatch · Auto-config</div>
+        </div>
+
+        <div class="arch-connector">
+          <div class="arch-line"></div>
+          <div class="arch-label">Code for IBM i Public API</div>
+          <div class="arch-arrow"></div>
+        </div>
+
+        <!-- Layer 3: Code for IBM i -->
+        <div class="arch-layer l-codeibmi">
+          <div class="arch-layer-title">Code for IBM i Extension</div>
+          <div class="arch-layer-sub">SSH connection reused — no extra credentials</div>
+        </div>
+
+        <div class="arch-connector">
+          <div class="arch-line"></div>
+          <div class="arch-label">SSH</div>
+          <div class="arch-arrow"></div>
+        </div>
+
+        <!-- Layer 4: IBM i -->
+        <div class="arch-layer l-ibmi">
+          <div class="arch-layer-title">IBM i System</div>
+          <div class="arch-layer-sub">DB2 for i &nbsp;·&nbsp; IFS &nbsp;·&nbsp; Job Logs &nbsp;·&nbsp; Source Members &nbsp;·&nbsp; Spool Files</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ SLIDE 6 — SECURITY ══════════════════ -->
+  <div class="slide" id="slide-6">
+    <div class="grid-bg"></div>
+    <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
+
+    <div style="width:100%; max-width:1100px; z-index:1; display:flex; flex-direction:column; align-items:flex-start;">
+      <div class="slide-label">Security</div>
+      <h2 style="margin-bottom:18px; opacity:0;" class="slide-h2-sm">Built-in, <span class="highlight-green">not bolted-on.</span></h2>
+
+      <div class="sec-audience-q">
+        🛡️ &nbsp;"Worried about an AI modifying your production IBM i data? Here's why you don't need to be."
+      </div>
+
+      <div class="sec-cards">
+
+        <div class="sec-card">
+          <div class="sec-icon">👤</div>
+          <div class="sec-title">Your Profile, Your Access</div>
+          <p class="sec-desc">iAgentX uses <em>your</em> IBM i user profile via Code for IBM i's SSH session. No service account. No elevated privileges. No stored credentials. The AI operates within your own access rights.</p>
+        </div>
+
+        <div class="sec-card">
+          <div class="sec-icon">🔍</div>
+          <div class="sec-title">Read-Only SQL, Always</div>
+          <p class="sec-desc">Only <code style="color:var(--ibm-cyan);">SELECT</code>, <code style="color:var(--ibm-cyan);">WITH</code>, and <code style="color:var(--ibm-cyan);">VALUES</code> are permitted. INSERT / UPDATE / DELETE / DDL are <strong style="color:#fff;">blocked at the extension layer</strong> — the AI literally cannot modify DB2 data.</p>
+          <span class="sec-tag">No writes to DB2</span>
+        </div>
+
+        <div class="sec-card">
+          <div class="sec-icon">📋</div>
+          <div class="sec-title">CL Command Allowlist</div>
+          <p class="sec-desc">Only display/diagnostic CL verb prefixes are permitted. All other commands are blocked, even if the AI requests them.</p>
+          <span class="sec-tag">DSP · LST · WRK · CHK · PRT · DMP · RTV · QRY</span>
+        </div>
+
+        <div class="sec-card">
+          <div class="sec-icon">📝</div>
+          <div class="sec-title">No Blind Remote Writes</div>
+          <p class="sec-desc">Editor write tools only operate on files <strong style="color:#fff;">already open</strong> in your VS Code. The AI cannot open and overwrite arbitrary source members without your involvement.</p>
+        </div>
+
+        <div class="sec-card">
+          <div class="sec-icon">🌐</div>
+          <div class="sec-title">Loopback-Only HTTP Server</div>
+          <p class="sec-desc">The MCP server binds exclusively to <code style="color:var(--ibm-cyan);">127.0.0.1</code>. It is completely unreachable from any other machine on the network — no firewall rules needed.</p>
+          <span class="sec-tag">127.0.0.1 only</span>
+        </div>
+
+        <div class="sec-card">
+          <div class="sec-icon">🔐</div>
+          <div class="sec-title">No Credential Storage</div>
+          <p class="sec-desc">iAgentX stores absolutely nothing. SSH credentials live exclusively in Code for IBM i's secure credential store. Zero attack surface for credential theft.</p>
+        </div>
+
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:20px; opacity:0;" class="sec-links">
+        <span class="sec-tag" style="font-size:12px; padding:4px 14px;">🛒 VS Code Marketplace</span>
+        <span class="sec-tag" style="font-size:12px; padding:4px 14px;">🟢 Open VSX Marketplace</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ SLIDE 7 — TOOLS ══════════════════ -->
+  <div class="slide" id="slide-7">
+    <div class="grid-bg"></div>
+    <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
+
+    <div class="tools-left" style="z-index:1;">
+      <div class="slide-label">Capabilities</div>
+      <h2 class="tools-headline">29 IBM i Tools<br><span class="highlight">at your AI's fingertips.</span></h2>
+      <p class="tools-sub">Every tool available to Claude Code, Copilot Chat, and IBM Bob simultaneously — the moment you install the extension.</p>
+      <div class="tools-count">29</div>
+      <div class="tools-count-label tools-sub" style="margin-top:2px;">purpose-built tools</div>
+    </div>
+
+    <div class="tools-right" style="z-index:1;">
+
+      <div class="tool-category">
+        <span class="tool-cat-icon">🔌</span>
+        <div>
+          <div class="tool-cat-name">Connection</div>
+          <div class="tool-chips">
+            <span class="tool-chip cyan">ibmi_connection_status</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-category">
+        <span class="tool-cat-icon">📁</span>
+        <div>
+          <div class="tool-cat-name">Source Members &amp; Objects</div>
+          <div class="tool-chips">
+            <span class="tool-chip">get_source_member</span>
+            <span class="tool-chip">list_source_members</span>
+            <span class="tool-chip">list_source_files</span>
+            <span class="tool-chip">search_source_members</span>
+            <span class="tool-chip">list_objects</span>
+            <span class="tool-chip">get_object_info</span>
+            <span class="tool-chip">check_object</span>
+            <span class="tool-chip">get_program_info</span>
+            <span class="tool-chip">get_file_fields</span>
+            <span class="tool-chip">get_library_list</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-category">
+        <span class="tool-cat-icon">🗂️</span>
+        <div>
+          <div class="tool-cat-name">IFS</div>
+          <div class="tool-chips">
+            <span class="tool-chip green">get_ifs_file</span>
+            <span class="tool-chip green">list_ifs_directory</span>
+            <span class="tool-chip green">search_ifs</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-category">
+        <span class="tool-cat-icon">🗄️</span>
+        <div>
+          <div class="tool-cat-name">SQL &amp; Data</div>
+          <div class="tool-chips">
+            <span class="tool-chip cyan">run_sql</span>
+            <span class="tool-chip cyan">get_data_area</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-category">
+        <span class="tool-cat-icon">🔧</span>
+        <div>
+          <div class="tool-cat-name">Jobs &amp; Diagnostics</div>
+          <div class="tool-chips">
+            <span class="tool-chip gold">get_job_log</span>
+            <span class="tool-chip gold">find_jobs</span>
+            <span class="tool-chip gold">list_spool_files</span>
+            <span class="tool-chip gold">get_spool_file</span>
+            <span class="tool-chip gold">get_output_queue_info</span>
+            <span class="tool-chip gold">run_cl_command</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-category">
+        <span class="tool-cat-icon">👤</span>
+        <div>
+          <div class="tool-cat-name">Users &amp; Messages</div>
+          <div class="tool-chips">
+            <span class="tool-chip cyan">list_user_profiles</span>
+            <span class="tool-chip cyan">get_message_description</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-category">
+        <span class="tool-cat-icon">✏️</span>
+        <div>
+          <div class="tool-cat-name">VS Code Editor</div>
+          <div class="tool-chips">
+            <span class="tool-chip purple">get_active_editor</span>
+            <span class="tool-chip purple">list_open_editors</span>
+            <span class="tool-chip purple">update_active_editor</span>
+            <span class="tool-chip purple">update_editor_by_uri</span>
+            <span class="tool-chip purple">replace_in_active_editor</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════ SLIDE 8 — DEMO 1 ══════════════════ -->
+  <div class="slide" id="slide-8">
+    <div class="grid-bg"></div>
+    <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
+
+    <div class="demo-left" style="z-index:1;">
+      <div class="slide-label">Demo 1 — Job in Message Wait</div>
+      <h2 style="font-size:clamp(18px,2.6vw,32px); opacity:0;" class="slide-h2-sm">Requirement: <span class="highlight">Diagnose a job stuck in MSGW</span></h2>
+
+      <div class="demo-q">
+        💬 "Is any of my jobs in message wait? Get the root cause."
+      </div>
+
+      <div class="demo-scenario">
+        <div class="demo-scenario-title">Scenario</div>
+        <ul>
+          <li>Batch job <code>MSGWDEMO</code> submitted via <code>SBMJOB</code></li>
+          <li>Job silently stopped responding — no error, no output</li>
+          <li>Nobody knows why it's hanging or what it's waiting for</li>
+          <li>AI must find the job, check its status, and read its log</li>
+        </ul>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px 18px; opacity:0;" class="demo-prompt-box">
+        <div style="font-size:11px; color:var(--ibm-blue-light); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; font-weight:700;">Prompt used</div>
+        <button class="copy-btn" onclick="copyPrompt(this)">📋 Copy</button>
+        <div style="font-family:monospace; font-size:12px; color:var(--text-secondary); line-height:1.6; white-space:pre-wrap;">Is any of my jobs in message wait? Get the root cause.</div>
+      </div>
+    </div>
+
+    <div class="demo-right" style="z-index:1;">
+      <div class="chat-window">
+        <div class="chat-bar">
+          <span class="chat-bar-icon">🤖</span>
+          <span class="chat-bar-title">Claude Code — Chat</span>
+        </div>
+        <div class="chat-msgs">
+          <div class="chat-msg-user m1">Is any of my jobs in message wait? Get the root cause.</div>
+
+          <div class="chat-msg-tool m2" style="flex-direction:column; align-items:flex-start; gap:4px;">
+            <div style="display:flex; gap:8px; align-items:center;"><span>⚡</span><span>ibmi_find_jobs — searching for MSGW jobs for current user</span></div>
+            <div style="display:flex; gap:8px; align-items:center; margin-top:2px;"><span>⚡</span><span>ibmi_get_job_log — reading job log for MSGWDEMO</span></div>
+          </div>
+
+          <div class="chat-msg-ai m3">
+            <strong style="color:var(--accent-gold);">⚠ Job found in MSGW:</strong><br>
+            <code style="color:var(--ibm-cyan);">MSGWDEMO</code> is waiting for an operator reply.<br><br>
+            <strong style="color:#fff;">Root cause from job log:</strong><br>
+            The job completed two SQL steps successfully —
+            scanned the system catalog and counted tables across schemas.
+            At step 3, it sent a <code style="color:var(--ibm-cyan);">*INQ</code> inquiry message to <code style="color:var(--ibm-cyan);">QSYSOPR</code>:<br><br>
+            <em style="color:var(--text-secondary); font-size:11px;">"Nightly extract ready. Found 4,821 tables in 312 schemas. Reply G to proceed or C to cancel."</em><br><br>
+            <div style="color:var(--ibm-green-light); font-size:11px;">→ Job is healthy — it is waiting for a human decision before the extract runs. Reply in QSYSOPR to unblock it.</div>
+          </div>
+        </div>
+        <div class="tools-used-row mu">
+          <span class="tools-used-label">Tools used:</span>
+          <span class="tool-badge">ibmi_find_jobs</span>
+          <span class="tool-badge">ibmi_get_job_log</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ SLIDE 9 — DEMO 2 ══════════════════ -->
+  <div class="slide" id="slide-9">
+    <div class="grid-bg"></div>
+    <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
+
+    <div class="demo-left" style="z-index:1;">
+      <div class="slide-label">Demo 2 — Row Count Analysis</div>
+      <h2 style="font-size:clamp(18px,2.6vw,32px); opacity:0;" class="slide-h2-sm">Requirement: <span class="highlight">Cross-table row count analysis</span></h2>
+
+      <div class="demo-q">
+        💬 "How long would it take you to manually write SQL to get row counts for every table <em>and</em> its history table across an entire schema?"
+      </div>
+
+      <div class="demo-scenario">
+        <div class="demo-scenario-title">Scenario</div>
+        <ul>
+          <li>Schema: <code>XYZLIBRARY</code></li>
+          <li>Each table has an associated history table (temporal type <code>H</code>)</li>
+          <li>Example: <code>RULE</code> (main) ↔ <code>RULEH</code> (history)</li>
+          <li>History table name = main name + trailing <code>H</code> in system name</li>
+          <li>Need: row counts for every main table + its history table</li>
+        </ul>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px 18px; opacity:0;" class="demo-prompt-box">
+        <div style="font-size:11px; color:var(--ibm-blue-light); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; font-weight:700;">Prompt used</div>
+        <button class="copy-btn" onclick="copyPrompt(this)">📋 Copy</button>
+        <div style="font-family:monospace; font-size:12px; color:var(--text-secondary); line-height:1.6; white-space:pre-wrap;">Get row counts for all main tables and their history tables in XYZLIBRARY. History tables have temporal type H, and the main table name is derived by removing the trailing H from the history table's system name.</div>
+      </div>
+    </div>
+
+    <div class="demo-right" style="z-index:1;">
+      <div class="chat-window">
+        <div class="chat-bar">
+          <span class="chat-bar-icon">🤖</span>
+          <span class="chat-bar-title">Claude Code — Chat</span>
+        </div>
+        <div class="chat-msgs">
+          <div class="chat-msg-user m1">Get row counts for all main tables and their history tables in XYZLIBRARY. History tables have temporal type H, and the main table name is derived by removing the trailing H.</div>
+
+          <div class="chat-msg-tool m2">
+            <span>⚡</span>
+            <span>ibmi_run_sql — querying QSYS2.SYSTABLES + dynamic COUNT(*)</span>
+          </div>
+
+          <div class="chat-msg-ai m3">
+            Here are the row counts for all main tables and their history tables in XYZLIBRARY:
+            <table class="result-table">
+              <thead>
+                <tr><th>Main Table</th><th>Rows</th><th>History Table</th><th>History Rows</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>RULE</td><td>1,284</td><td>RULEH</td><td>8,742</td></tr>
+                <tr><td>POLICY</td><td>45,610</td><td>POLICYH</td><td>312,048</td></tr>
+                <tr><td>CLAIM</td><td>9,331</td><td>CLAIMH</td><td>67,812</td></tr>
+                <tr><td>CONTRACT</td><td>22,100</td><td>CONTRACTH</td><td>180,556</td></tr>
+                <tr><td>PRODUCT</td><td>412</td><td>PRODUCTH</td><td>2,184</td></tr>
+              </tbody>
+            </table>
+            <div style="margin-top:8px; color:var(--ibm-blue-light); font-size:11px;">📊 Found 18 main tables with history counterparts in XYZLIBRARY.</div>
+          </div>
+        </div>
+        <div class="tools-used-row mu">
+          <span class="tools-used-label">Tools used:</span>
+          <span class="tool-badge">ibmi_run_sql</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ SLIDE 10 — DEMO 2 ROW COUNT ══════════════════ -->
+  <div class="slide" id="slide-10">
+    <div class="grid-bg"></div>
+    <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
+
+    <div class="demo-left" style="z-index:1;">
+      <div class="slide-label">Demo 3 — Fix FK Hierarchy Function</div>
+      <h2 style="font-size:clamp(18px,2.6vw,32px); opacity:0;" class="slide-h2-sm">Requirement: <span class="highlight">Debug &amp; fix a SQL table function</span></h2>
+
+      <div class="demo-q" style="border-left-color:var(--accent-purple);">
+        💬 "Ever had a bug where your SQL function ignores all the FK relationships you carefully designed?"
+      </div>
+
+      <div class="demo-scenario">
+        <div class="demo-scenario-title">Scenario</div>
+        <ul>
+          <li>Function: <code>XYZZ010788.schemaTableHierarchy('XYZLIBRARY')</code></li>
+          <li>Bug: Returns <code>level = 1</code> for ALL tables</li>
+          <li>Expected: levels reflect FK depth (parent=1, child=2, grandchild=3…)</li>
+          <li>Goal: Fix it &amp; deploy to library <code>DK</code> for testing</li>
+        </ul>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px 18px; opacity:0;" class="demo-prompt-box">
+        <div style="font-size:11px; color:var(--accent-purple); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; font-weight:700;">Prompt used</div>
+        <button class="copy-btn" onclick="copyPrompt(this)">📋 Copy</button>
+        <div style="font-family:monospace; font-size:12px; color:var(--text-secondary); line-height:1.6; white-space:pre-wrap;">The function schemaTableHierarchy in my working directory is returning hierarchy level 1 for all tables when I run SELECT * FROM TABLE(XYZZ010788.schemaTableHierarchy('XYZLIBRARY')). The levels should reflect FK relationships. Investigate and fix it, then give me the fix to create in library DK and test against XYZLIBRARY.</div>
+      </div>
+
+      <div style="margin-top:12px; padding:10px 16px; background:rgba(138,63,252,0.08); border:1px solid rgba(138,63,252,0.2); border-radius:8px; opacity:0;" class="insight-box">
+        <div style="font-size:12px; font-weight:700; color:#a56eff; margin-bottom:4px;">✦ Key Insight</div>
+        <div style="font-size:12.5px; color:var(--text-secondary);">The AI reads the open source member <strong style="color:#fff;">directly from your editor</strong> — no copy-paste, no manual file transfer to the AI.</div>
+      </div>
+    </div>
+
+    <div class="demo-right" style="z-index:1;">
+      <div class="chat-window">
+        <div class="chat-bar">
+          <span class="chat-bar-icon">🤖</span>
+          <span class="chat-bar-title">Claude Code — Chat</span>
+        </div>
+        <div class="chat-msgs">
+          <div class="chat-msg-user m1">The function schemaTableHierarchy is returning level 1 for all tables. Investigate and fix it, then give me the fix for library DK.</div>
+
+          <div class="chat-msg-tool m2" style="flex-direction:column; align-items:flex-start; gap:4px;">
+            <div style="display:flex; gap:8px; align-items:center;"><span>⚡</span><span>ibmi_get_active_editor — reading open QSQLSRC/SCHTBLHRC</span></div>
+            <div style="display:flex; gap:8px; align-items:center; margin-top:2px;"><span>⚡</span><span>ibmi_run_sql — querying QSYS2.SYSKEYCST for FK relationships</span></div>
+          </div>
+
+          <div class="chat-msg-ai m3">
+            <strong style="color:#a56eff;">🔍 Root Cause Found:</strong><br>
+            The recursive CTE uses <code style="color:var(--ibm-cyan);">CONSTRAINT_SCHEMA = p_schema</code> but the FK catalog view uses <code style="color:var(--ibm-cyan);">UNIQUE_CONSTRAINT_SCHEMA</code> for the referenced side. All FK joins are silently producing no rows — so every table falls back to level 1.<br><br>
+            <strong style="color:#42be65;">✅ Fix for library DK:</strong><br>
+            <code style="color:var(--ibm-cyan); font-size:10.5px;">CREATE OR REPLACE FUNCTION DK.schemaTableHierarchy(p_schema VARCHAR(128))<br>RETURNS TABLE(TABLE_NAME VARCHAR(128), LEVEL INT)<br>-- [corrected JOIN condition: UNIQUE_CONSTRAINT_SCHEMA]<br>...</code>
+            <div style="margin-top:6px; color:var(--ibm-green-light); font-size:11px;">Ready to CREATE in library DK and test against XYZLIBRARY.</div>
+          </div>
+        </div>
+        <div class="tools-used-row mu">
+          <span class="tools-used-label">Tools used:</span>
+          <span class="tool-badge">ibmi_get_active_editor</span>
+          <span class="tool-badge">ibmi_run_sql</span>
+          <span class="tool-badge">ibmi_replace_in_active_editor</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ SLIDE 11 — COMPARISON ══════════════════ -->
+  <div class="slide" id="slide-11">
+    <div class="grid-bg"></div>
+    <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
+
+    <div style="width:100%; max-width:1100px; z-index:1; display:flex; flex-direction:column; align-items:center;">
+      <div class="slide-label">Impact</div>
+      <h2 style="opacity:0;" class="slide-h2-sm">Before &amp; After <span class="highlight">iAgentX</span></h2>
+
+      <div class="compare-wrap">
+        <div class="compare-panel before">
+          <div class="compare-header bad">⚠ Without iAgentX</div>
+          <div class="compare-item"><span class="compare-item-icon">😤</span><span>Manually copy IBM i source into chat — then paste fixes back</span></div>
+          <div class="compare-item"><span class="compare-item-icon">🔁</span><span>Context-switch between VS Code, 5250 terminal, and AI chat window</span></div>
+          <div class="compare-item"><span class="compare-item-icon">🔍</span><span>AI can't see open files — you must describe the code in words</span></div>
+          <div class="compare-item"><span class="compare-item-icon">🚫</span><span>No job log, no spool files, no CL diagnostics in AI context</span></div>
+          <div class="compare-item"><span class="compare-item-icon">💸</span><span>Premium vendor add-ons required for IBM i AI integration</span></div>
+        </div>
+
+        <div class="compare-panel after">
+          <div class="compare-header good">✦ With iAgentX</div>
+          <div class="compare-item"><span class="compare-item-icon">⚡</span><span>AI reads source members directly — no copy-paste ever</span></div>
+          <div class="compare-item"><span class="compare-item-icon">💬</span><span>Single chat window for all IBM i analysis, debugging &amp; editing</span></div>
+          <div class="compare-item"><span class="compare-item-icon">👁️</span><span>AI sees your open editors in real time — surgical edits on the spot</span></div>
+          <div class="compare-item"><span class="compare-item-icon">🔧</span><span>Job logs, spool files, CL diagnostics all accessible in AI chat</span></div>
+          <div class="compare-item"><span class="compare-item-icon">🆓</span><span>Free, open source — works with the tools you already have</span></div>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-num">0</div>
+          <div class="stat-label">extra credentials needed</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">29</div>
+          <div class="stat-label">IBM i tools for your AI</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">3</div>
+          <div class="stat-label">AI clients auto-configured</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">$0</div>
+          <div class="stat-label">cost — open source, MIT</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ SLIDE 12 — GET STARTED ══════════════════ -->
+  <div class="slide" id="slide-12">
+    <div class="grid-bg"></div>
+    <div class="glow-orb a"></div>
+    <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
+
+    <div style="z-index:1; display:flex; flex-direction:column; align-items:center; width:100%; text-align:center;">
+      <div class="slide-label">Get Started</div>
+      <h2 style="opacity:0;" class="slide-h2-sm">Up and running in <span class="highlight">3 steps.</span></h2>
+
+      <div class="steps-row">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-title">Code for IBM i</div>
+          <p class="step-desc">Install the Code for IBM i extension and connect to your IBM i system</p>
+          <div class="step-code">halcyontechltd.code-for-ibmi</div>
+        </div>
+
+        <div class="step-connector">
+          <div class="step-connector-line"></div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-title">Install iAgentX</div>
+          <p class="step-desc">Search the VS Code Marketplace and install IBM iAgentX</p>
+          <div class="step-code">IBM iAgentX</div>
+        </div>
+
+        <div class="step-connector">
+          <div class="step-connector-line"></div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-title">Open Claude Code</div>
+          <p class="step-desc">iAgentX auto-configures Claude Code, Copilot &amp; IBM Bob. Start chatting.</p>
+          <div class="step-code">claude</div>
+        </div>
+      </div>
+
+      <div class="link-row">
+        <a href="https://marketplace.visualstudio.com/items?itemName=Duvaragesh.ibm-iagentx" class="ext-link primary">🛒 &nbsp;VS Code Marketplace</a>
+        <a href="https://open-vsx.org/extension/Duvaragesh/ibm-iagentx" class="ext-link primary" style="background:rgba(0,165,80,0.85); border-color:rgba(0,165,80,0.4);">🟢 &nbsp;Open VSX Marketplace</a>
+        <a href="https://github.com/Duvaragesh/ibm-iagentx" class="ext-link secondary">⭐ &nbsp;GitHub — Duvaragesh/ibm-iagentx</a>
+      </div>
+
+      <p class="closing-tagline">
+        Your IBM i. Your AI. <span>Connected.</span>
+      </p>
+    </div>
+  </div>
+
+</div><!-- /#presentation -->
+
+<!-- ── PROGRESS + NAV ── -->
+<div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+
+<div id="nav">
+  <button class="nav-btn" id="btn-prev" title="Previous (←)">&#8592;</button>
+  <div class="dot-nav" id="dot-nav"></div>
+  <span id="slide-counter">1 / 11</span>
+  <button class="nav-btn" id="btn-next" title="Next (→)">&#8594;</button>
+</div>
+
+<div id="kb-hint">← → to navigate</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let current = 0;
+  let animating = false;
+
+  /* Build dots */
+  const dotNav = document.getElementById('dot-nav');
+  slides.forEach((_, i) => {
+    const d = document.createElement('span');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', () => goTo(i));
+    dotNav.appendChild(d);
+  });
+
+  function updateUI() {
+    document.getElementById('slide-counter').textContent = (current + 1) + ' / ' + total;
+    document.getElementById('progress-bar').style.width = ((current + 1) / total * 100) + '%';
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+  }
+
+  function goTo(idx) {
+    if (animating || idx === current || idx < 0 || idx >= total) return;
+    animating = true;
+
+    const prev = slides[current];
+    const next = slides[idx];
+
+    // Remove active; add exit direction
+    prev.classList.remove('active');
+    if (idx > current) {
+      prev.classList.add('exit-left');
+    } else {
+      prev.style.transform = 'translateX(60px)';
+      prev.style.opacity = '0';
+    }
+
+    next.style.transform = idx > current ? 'translateX(60px)' : 'translateX(-60px)';
+    next.style.opacity = '0';
+    next.style.transition = 'none';
+
+    // Re-trigger animations by cloning children with .anim-* classes
+    // Force reflow
+    void next.offsetWidth;
+    next.style.transition = '';
+
+    // Reset all animated children so they re-run
+    const animated = next.querySelectorAll('[style*="animation"]');
+    animated.forEach(el => {
+      el.style.animation = 'none';
+      void el.offsetWidth;
+      el.style.animation = '';
+    });
+
+    // Trigger transition
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        next.classList.add('active');
+        next.style.transform = '';
+        next.style.opacity = '';
+        current = idx;
+        updateUI();
+
+        setTimeout(() => {
+          prev.classList.remove('exit-left');
+          prev.style.transform = '';
+          prev.style.opacity = '';
+          animating = false;
+        }, 650);
+      });
+    });
+  }
+
+  function copyPrompt(btn) {
+    const text = btn.nextElementSibling.textContent.trim();
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '✓ Copied';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  document.getElementById('btn-prev').addEventListener('click', () => goTo(current - 1));
+  document.getElementById('btn-next').addEventListener('click', () => goTo(current + 1));
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') goTo(current + 1);
+    if (e.key === 'ArrowLeft') goTo(current - 1);
+  });
+
+  /* ── Animate .slide-h2 / .slide-h2-sm / .arch-para on active ── */
+  const observer = new MutationObserver(mutations => {
+    mutations.forEach(m => {
+      if (m.target.classList.contains('active')) {
+        const toAnimate = m.target.querySelectorAll('.slide-h2, .slide-h2-sm, .arch-para, .demo-prompt-box, .insight-box');
+        toAnimate.forEach((el, i) => {
+          el.style.animation = 'none';
+          void el.offsetWidth;
+          el.style.opacity = '0';
+          el.style.animation = `fadeUp 0.6s ${0.25 + i * 0.15}s ease forwards`;
+        });
+      }
+    });
+  });
+  slides.forEach(s => observer.observe(s, { attributes: true, attributeFilter: ['class'] }));
+
+  updateUI();
+</script>
+</body>
+</html>

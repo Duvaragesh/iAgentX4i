@@ -2,7 +2,7 @@
   "name": "ibm-iagentx",
   "displayName": "IBM iAgentX",
   "description": "Extends IBM i resources (source members, IFS, SQL, job logs) into VS Code AI agents — GitHub Copilot Chat and Claude Code — via MCP.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "Duvaragesh",
   "license": "MIT",
   "icon": "images/logo.png",
@@ -66,8 +66,19 @@
         },
         "ibm-iagentx.clAllowedPrefixes": {
           "type": "array",
-          "items": { "type": "string" },
-          "default": ["DSP", "LST", "WRK", "CHK", "PRT", "DMP", "RTV", "QRY"],
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "DSP",
+            "LST",
+            "WRK",
+            "CHK",
+            "PRT",
+            "DMP",
+            "RTV",
+            "QRY"
+          ],
           "description": "CL command verb prefixes permitted by ibmi_run_cl_command."
         },
         "ibm-iagentx.preferredPort": {
@@ -86,14 +97,25 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "package": "npm run compile && vsce package --readme-path MARKETPLACE.md",
-    "publish": "npm run compile && vsce publish --readme-path MARKETPLACE.md"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "setup:int": "node scripts/setup-int-test-profile.js",
+    "compile:int": "tsc -p tsconfig.int.json",
+    "test:int": "npm run setup:int && npm run compile:int && vscode-test",
+    "package": "npm run test && npm run compile && vsce package --readme-path MARKETPLACE.md",
+    "publish": "npm run test && npm run compile && vsce publish --readme-path MARKETPLACE.md"
   },
   "devDependencies": {
     "@halcyontech/vscode-ibmi-types": "^2.0.0",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^25.9.3",
     "@types/vscode": "^1.99.0",
+    "@vitest/coverage-v8": "^4.1.9",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^3.0.0",
     "@vscode/vsce": "^3.0.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.9"
   }
 }

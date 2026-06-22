@@ -2,6 +2,25 @@
 
 All notable changes to IBM iAgentX are documented here.
 
+## [0.2.2] - 2026-06-19
+
+### Added
+
+**6 new read-only IBM i tools (Phase 1 expansion):**
+
+- **`ibmi_search_source_members`** — full-text search across all members in a source physical file. Returns matching lines with member name, line number, and line text. Uses `SYSTOOLS.SEARCH_SOURCE` on V7R3+ with a transparent per-member SQL fallback for older OS releases. Accepts an optional `memberFilter` wildcard (e.g. `BATCH*`) and `maxResults` (default 100, max 500).
+- **`ibmi_search_ifs`** — recursive text search across an IFS directory tree. Enumerates text files via `QSYS2.IFS_OBJECT_STATISTICS` and searches line-by-line with `QSYS2.IFS_READ`. Binary files (CCSID 65535) are automatically skipped. Supports optional filename glob (`*.sh`, `*.py`), case-sensitive toggle, and `maxFiles` limit (default 50, max 200). Returns matching file paths with sample lines per match.
+- **`ibmi_get_message_description`** — retrieves the first- and second-level text for an IBM i message by message ID (e.g. `CPF0001`, `MCH1211`, `SQL0803`) from any message file. Sourced from `QSYS2.MESSAGE_FILE_DATA`. Returns `found: false` when the message does not exist in the specified MSGF — never throws. Useful for explaining error codes found in job logs.
+- **`ibmi_get_program_info`** — detailed attributes of a program (`*PGM`) or service program (`*SRVPGM`): ILE attribute, activation group, target release, owner, size, creation and last-modified timestamps. Also returns the full list of bound modules via `QSYS2.BOUND_MODULE_INFO` (each with module library, name, and attribute). Returns `exists: false` when the object is not found.
+- **`ibmi_list_user_profiles`** — lists IBM i user profiles from `QSYS2.USER_INFO` with status, user class, last sign-on timestamp, days until password expiry, and no-password indicator. Supports an optional name filter with `*` wildcard (e.g. `APP*`), status filter (`*ALL` / `*ENABLED` / `*DISABLED`), and `maxProfiles` limit (default 100, max 500).
+- **`ibmi_get_output_queue_info`** — lists spool files on a named output queue (`*OUTQ`) via `QSYS2.SPOOLED_FILE_INFO`, filtered by library and output queue name. Accepts an optional status filter (`*ALL` / `*READY` / `*HELD`) and `maxFiles` limit. Returns spool file name, job, job user, spool file number, status, page count, and creation timestamp.
+
+### Improved
+
+- **`ibmi_connection_status`** tool description updated to list all 29 available tools (was 23).
+
+---
+
 ## [0.2.1] - 2026-06-17
 
 ### Added

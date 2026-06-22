@@ -153,9 +153,10 @@ const TOOLS = [
     description: 'Returns the current IBM i connection status including OS version. Use this to check whether a connection is active before running other tools. ' +
       'Available tools: ibmi_connection_status, ibmi_get_active_editor, ibmi_list_open_editors, ibmi_update_active_editor, ' +
       'ibmi_update_editor_by_uri, ibmi_replace_in_active_editor, ibmi_get_source_member, ibmi_list_source_members, ' +
-      'ibmi_list_source_files, ibmi_get_ifs_file, ibmi_list_ifs_directory, ibmi_run_sql, ibmi_get_job_log, ibmi_run_cl_command, ' +
-      'ibmi_get_spool_file, ibmi_find_jobs, ibmi_list_objects, ibmi_get_object_info, ibmi_check_object, ibmi_get_data_area, ' +
-      'ibmi_list_spool_files, ibmi_get_file_fields, ibmi_get_library_list. ' +
+      'ibmi_list_source_files, ibmi_search_source_members, ibmi_get_ifs_file, ibmi_list_ifs_directory, ibmi_search_ifs, ' +
+      'ibmi_run_sql, ibmi_get_job_log, ibmi_run_cl_command, ibmi_get_spool_file, ibmi_find_jobs, ibmi_list_objects, ' +
+      'ibmi_get_object_info, ibmi_check_object, ibmi_get_data_area, ibmi_list_spool_files, ibmi_get_file_fields, ' +
+      'ibmi_get_library_list, ibmi_get_message_description, ibmi_get_program_info, ibmi_list_user_profiles, ibmi_get_output_queue_info. ' +
       'The first six (ibmi_get_active_editor, ibmi_list_open_editors, ibmi_update_active_editor, ibmi_update_editor_by_uri, ' +
       'ibmi_replace_in_active_editor) work without an IBM i connection; all others require one. ' +
       'Fetch all needed tool schemas in a single ToolSearch call upfront rather than sequentially.',
@@ -383,6 +384,89 @@ const TOOLS = [
         newText: { type: 'string', description: 'Replacement text. Use real newline characters (\\n), not escaped \\\\n sequences.' },
       },
       required: ['oldText', 'newText'],
+    },
+  },
+  {
+    name: 'ibmi_search_source_members',
+    description: 'Full-text search across source members in an IBM i source physical file. Returns matching lines with member name, line number, and line text. Uses SYSTOOLS.SEARCH_SOURCE when available (V7R3+), otherwise falls back to per-member SQL scan.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        library: { type: 'string', description: 'Library containing the source physical file (e.g. MYLIB)' },
+        spf: { type: 'string', description: 'Source physical file name (e.g. QRPGLESRC, QCLLESRC)' },
+        searchTerm: { type: 'string', description: 'Text to search for (case-insensitive)' },
+        memberFilter: { type: 'string', description: 'Optional member name filter with * wildcard (e.g. BATCH*)' },
+        maxResults: { type: 'number', description: 'Maximum matching lines to return (default 100, max 500)' },
+      },
+      required: ['library', 'spf', 'searchTerm'],
+    },
+  },
+  {
+    name: 'ibmi_search_ifs',
+    description: 'Recursive text search across an IFS directory tree. Returns files containing the search term with sample matching lines. Binary files (CCSID 65535) are skipped automatically.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Absolute IFS root directory to search under (e.g. /home/MYUSER)' },
+        searchTerm: { type: 'string', description: 'Text to search for' },
+        filePattern: { type: 'string', description: 'Optional filename pattern with * wildcard (e.g. *.sh, *.py). If omitted, all text files are searched.' },
+        caseSensitive: { type: 'boolean', description: 'Case-sensitive search (default false)' },
+        maxFiles: { type: 'number', description: 'Maximum number of matching files to return (default 50, max 200)' },
+      },
+      required: ['path', 'searchTerm'],
+    },
+  },
+  {
+    name: 'ibmi_get_message_description',
+    description: 'Retrieves the text and second-level help for an IBM i message by message ID (e.g. CPF0001, MCH1211). Use this to explain error codes found in job logs. Returns found:false when the message ID does not exist in the specified message file.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        library: { type: 'string', description: 'Library containing the message file (e.g. QSYS, MYLIB)' },
+        msgf: { type: 'string', description: 'Message file name (e.g. QCPFMSG, QSQLMSG, MYMSGF)' },
+        messageId: { type: 'string', description: 'Message ID to look up (e.g. CPF0001, MCH1211, SQL0803)' },
+      },
+      required: ['library', 'msgf', 'messageId'],
+    },
+  },
+  {
+    name: 'ibmi_get_program_info',
+    description: 'Returns detailed attributes of an IBM i program (*PGM) or service program (*SRVPGM), including ILE attributes, activation group, target release, and the list of bound modules.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        library: { type: 'string', description: 'Library containing the program' },
+        program: { type: 'string', description: 'Program name' },
+        objectType: { type: 'string', enum: ['*PGM', '*SRVPGM'], description: 'Object type: *PGM (default) or *SRVPGM' },
+      },
+      required: ['library', 'program'],
+    },
+  },
+  {
+    name: 'ibmi_list_user_profiles',
+    description: 'Lists IBM i user profiles with their status, user class, and last sign-on time. Useful for filtering job searches by user and auditing active profiles.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        nameFilter: { type: 'string', description: 'User profile name filter with optional * wildcard (e.g. APP*, MYUSER). If omitted, all profiles are listed.' },
+        status: { type: 'string', enum: ['*ALL', '*ENABLED', '*DISABLED'], description: 'Filter by profile status (default *ALL)' },
+        maxProfiles: { type: 'number', description: 'Maximum profiles to return (default 100, max 500)' },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'ibmi_get_output_queue_info',
+    description: 'Lists spool files on a specific IBM i output queue (*OUTQ). Use this to inspect the contents of a named output queue rather than searching across all queues.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        library: { type: 'string', description: 'Library containing the output queue' },
+        outq: { type: 'string', description: 'Output queue name' },
+        status: { type: 'string', enum: ['*ALL', '*READY', '*HELD'], description: 'Filter spool files by status (default *ALL)' },
+        maxFiles: { type: 'number', description: 'Maximum spool files to return (default 50, max 200)' },
+      },
+      required: ['library', 'outq'],
     },
   },
 ];
@@ -960,6 +1044,197 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<an
       description: r['SCHEMA_TEXT'] != null ? String(r['SCHEMA_TEXT']) : '',
     }));
     return { content: [{ type: 'text', text: JSON.stringify({ libraries, total: libraries.length }, null, 2) }] };
+  }
+
+  if (name === 'ibmi_search_source_members') {
+    const lib = String(args.library).toUpperCase();
+    const file = String(args.spf).toUpperCase();
+    const term = String(args.searchTerm).replace(/'/g, "''");
+    const memberFilter = args.memberFilter ? String(args.memberFilter).toUpperCase() : undefined;
+    const max = Math.min(args.maxResults != null ? Number(args.maxResults) : 100, 500);
+    const memberArg = memberFilter ? `, MEMBER => '${memberFilter.replace(/\*/g, '%')}'` : '';
+    const q = `SELECT SOURCE_FILE_LIBRARY, SOURCE_FILE, SOURCE_MEMBER, SOURCE_SEQ_NBR, ` +
+      `CAST(SOURCE_DATA AS VARCHAR(200) CCSID 1208) AS SOURCE_DATA ` +
+      `FROM TABLE(SYSTOOLS.SEARCH_SOURCE(` +
+      `SOURCE_FILE_LIBRARY => '${lib}', SOURCE_FILE => '${file}', SEARCH_ARGUMENT => '${term}'${memberArg})) ` +
+      `FETCH FIRST ${max} ROWS ONLY`;
+    let rows: Record<string, unknown>[];
+    try {
+      rows = await getConn().runSQL(q) as Record<string, unknown>[];
+    } catch {
+      // Fallback: scan member-by-member via SQL on the PF
+      const memberClause = memberFilter ? ` AND SOURCE_MEMBER LIKE '${memberFilter.replace(/\*/g, '%')}'` : '';
+      const memberListQ = `SELECT SOURCE_MEMBER FROM TABLE(QSYS2.SYSPARTITIONSTAT) ` +
+        `WHERE SOURCE_FILE_LIBRARY = '${lib}' AND SOURCE_FILE = '${file}'${memberClause} FETCH FIRST 200 ROWS ONLY`;
+      rows = [];
+      try {
+        const members = await getConn().runSQL(memberListQ) as Record<string, unknown>[];
+        for (const m of members) {
+          if (rows.length >= max) { break; }
+          const mbr = String(m['SOURCE_MEMBER'] ?? '');
+          const lineQ = `SELECT RRN(T) AS SOURCE_SEQ_NBR, CAST(T.SRCDTA AS VARCHAR(200) CCSID 1208) AS SOURCE_DATA ` +
+            `FROM ${lib}.${file} T WHERE T.SRCMBR = '${mbr}' ` +
+            `AND UPPER(CAST(T.SRCDTA AS VARCHAR(200) CCSID 1208)) LIKE UPPER('%${term}%') FETCH FIRST 10 ROWS ONLY`;
+          try {
+            const lr = await getConn().runSQL(lineQ) as Record<string, unknown>[];
+            for (const r of lr) {
+              rows.push({ SOURCE_FILE_LIBRARY: lib, SOURCE_FILE: file, SOURCE_MEMBER: mbr, SOURCE_SEQ_NBR: r['SOURCE_SEQ_NBR'], SOURCE_DATA: r['SOURCE_DATA'] });
+              if (rows.length >= max) { break; }
+            }
+          } catch { /* skip unreadable members */ }
+        }
+      } catch { /* return empty if member list also fails */ }
+    }
+    const hits = rows.map(r => ({
+      library: String(r['SOURCE_FILE_LIBRARY'] ?? lib), spf: String(r['SOURCE_FILE'] ?? file),
+      member: String(r['SOURCE_MEMBER'] ?? ''),
+      lineNumber: r['SOURCE_SEQ_NBR'] != null ? Number(r['SOURCE_SEQ_NBR']) : null,
+      lineText: r['SOURCE_DATA'] != null ? String(r['SOURCE_DATA']).trim() : '',
+    }));
+    return { content: [{ type: 'text', text: JSON.stringify({ library: lib, spf: file, searchTerm: args.searchTerm, hits, total: hits.length }, null, 2) }] };
+  }
+
+  if (name === 'ibmi_search_ifs') {
+    const rootPath = String(args.path);
+    const term = String(args.searchTerm).replace(/'/g, "''");
+    const filePattern = args.filePattern ? String(args.filePattern) : undefined;
+    const caseInsensitive = !args.caseSensitive;
+    const maxF = Math.min(args.maxFiles != null ? Number(args.maxFiles) : 50, 200);
+    const enumQ = `SELECT PATH_NAME FROM TABLE(QSYS2.IFS_OBJECT_STATISTICS(` +
+      `PATH_NAME => '${rootPath.replace(/'/g, "''")}', SUBTREE_DIRECTORIES => 'YES')) ` +
+      `WHERE OBJECT_TYPE = '*STMF' AND CCSID <> 65535 ORDER BY PATH_NAME FETCH FIRST 1000 ROWS ONLY`;
+    const fileRows = await getConn().runSQL(enumQ) as Record<string, unknown>[];
+    const filtered = filePattern
+      ? fileRows.filter(r => {
+          const fname = String(r['PATH_NAME'] ?? '').split('/').pop() ?? '';
+          const re = new RegExp(`^${filePattern.replace(/\./g, '\\.').replace(/\*/g, '.*').replace(/\?/g, '.')}$`, caseInsensitive ? 'i' : '');
+          return re.test(fname);
+        })
+      : fileRows;
+    const matchingFiles: Array<{ path: string; matchCount: number; sampleLines: string[] }> = [];
+    for (const fr of filtered) {
+      if (matchingFiles.length >= maxF) { break; }
+      const fp = String(fr['PATH_NAME'] ?? '');
+      const sq = caseInsensitive
+        ? `SELECT CAST(LINE AS VARCHAR(200) CCSID 1208) AS LINE FROM TABLE(QSYS2.IFS_READ(PATH_NAME => '${fp.replace(/'/g, "''")}', IGNORE_ERRORS => 'YES')) WHERE UPPER(CAST(LINE AS VARCHAR(200) CCSID 1208)) LIKE UPPER('%${term}%') FETCH FIRST 5 ROWS ONLY`
+        : `SELECT CAST(LINE AS VARCHAR(200) CCSID 1208) AS LINE FROM TABLE(QSYS2.IFS_READ(PATH_NAME => '${fp.replace(/'/g, "''")}', IGNORE_ERRORS => 'YES')) WHERE CAST(LINE AS VARCHAR(200) CCSID 1208) LIKE '%${term}%' FETCH FIRST 5 ROWS ONLY`;
+      try {
+        const lr = await getConn().runSQL(sq) as Record<string, unknown>[];
+        if (lr.length > 0) {
+          matchingFiles.push({ path: fp, matchCount: lr.length, sampleLines: lr.map(r => String(r['LINE'] ?? '').trim()) });
+        }
+      } catch { /* skip unreadable files */ }
+    }
+    return { content: [{ type: 'text', text: JSON.stringify({ rootPath, searchTerm: args.searchTerm, matchingFiles, total: matchingFiles.length }, null, 2) }] };
+  }
+
+  if (name === 'ibmi_get_message_description') {
+    const lib = String(args.library).toUpperCase();
+    const msgFile = String(args.msgf).toUpperCase();
+    const msgId = String(args.messageId).toUpperCase();
+    const q = `SELECT MESSAGE_ID, ${castUtf8('MESSAGE_TEXT', 512)} AS MESSAGE_TEXT, ` +
+      `${castUtf8('MESSAGE_SECOND_LEVEL_TEXT', 2000)} AS MESSAGE_SECOND_LEVEL_TEXT, SEVERITY ` +
+      `FROM TABLE(QSYS2.MESSAGE_FILE_DATA(MESSAGE_FILE_LIBRARY => '${lib}', MESSAGE_FILE => '${msgFile}')) ` +
+      `WHERE MESSAGE_ID = '${msgId}' FETCH FIRST 1 ROW ONLY`;
+    const rows = await getConn().runSQL(q) as Record<string, unknown>[];
+    if (rows.length === 0) {
+      return { content: [{ type: 'text', text: JSON.stringify({ found: false, library: lib, msgf: msgFile, messageId: msgId }, null, 2) }] };
+    }
+    const r = rows[0];
+    return { content: [{ type: 'text', text: JSON.stringify({
+      found: true, library: lib, msgf: msgFile,
+      messageId: String(r['MESSAGE_ID'] ?? msgId),
+      messageText: r['MESSAGE_TEXT'] != null ? String(r['MESSAGE_TEXT']) : '',
+      secondLevelText: r['MESSAGE_SECOND_LEVEL_TEXT'] != null ? String(r['MESSAGE_SECOND_LEVEL_TEXT']) : '',
+      severity: r['SEVERITY'] != null ? Number(r['SEVERITY']) : null,
+    }, null, 2) }] };
+  }
+
+  if (name === 'ibmi_get_program_info') {
+    const lib = String(args.library).toUpperCase();
+    const pgm = String(args.program).toUpperCase();
+    const objType = args.objectType ? String(args.objectType).toUpperCase() : '*PGM';
+    if (objType !== '*PGM' && objType !== '*SRVPGM') { throw new Error('objectType must be *PGM or *SRVPGM'); }
+    const infoQ = `SELECT OBJNAME, OBJTYPE, OBJATTRIBUTE, ${castUtf8('OBJTEXT', 50)} AS OBJTEXT, ` +
+      `OBJOWNER, OBJSIZE, OBJCREATED, LAST_CHANGED_TIMESTAMP, PROGRAM_ATTRIBUTE, TARGET_RELEASE, ACTIVATION_GROUP ` +
+      `FROM TABLE(QSYS2.OBJECT_STATISTICS(OBJECT_LIBRARY => '${lib}', OBJECT_TYPE => '${objType}', OBJECT_NAME => '${pgm}')) ` +
+      `FETCH FIRST 1 ROW ONLY`;
+    const infoRows = await getConn().runSQL(infoQ) as Record<string, unknown>[];
+    if (infoRows.length === 0) {
+      return { content: [{ type: 'text', text: JSON.stringify({ exists: false, library: lib, program: pgm, objectType: objType, boundModules: [] }, null, 2) }] };
+    }
+    const r = infoRows[0];
+    let boundModules: Array<{ moduleLibrary: string; module: string; attribute: string }> = [];
+    try {
+      const moduleQ = `SELECT BOUND_MODULE_LIBRARY, BOUND_MODULE, MODULE_ATTRIBUTE FROM QSYS2.BOUND_MODULE_INFO ` +
+        `WHERE PROGRAM_LIBRARY = '${lib}' AND PROGRAM_NAME = '${pgm}' AND PROGRAM_TYPE = '${objType}' ORDER BY BOUND_MODULE`;
+      const mr = await getConn().runSQL(moduleQ) as Record<string, unknown>[];
+      boundModules = mr.map(m => ({
+        moduleLibrary: String(m['BOUND_MODULE_LIBRARY'] ?? ''),
+        module: String(m['BOUND_MODULE'] ?? ''),
+        attribute: String(m['MODULE_ATTRIBUTE'] ?? ''),
+      }));
+    } catch { /* not fatal */ }
+    return { content: [{ type: 'text', text: JSON.stringify({
+      exists: true, library: lib, program: pgm, objectType: String(r['OBJTYPE'] ?? objType),
+      attribute: r['OBJATTRIBUTE'] != null ? String(r['OBJATTRIBUTE']) : '',
+      description: r['OBJTEXT'] != null ? String(r['OBJTEXT']) : '',
+      owner: r['OBJOWNER'] != null ? String(r['OBJOWNER']) : '',
+      size: r['OBJSIZE'] != null ? Number(r['OBJSIZE']) : null,
+      createTime: r['OBJCREATED'] != null ? String(r['OBJCREATED']) : null,
+      lastModifiedTime: r['LAST_CHANGED_TIMESTAMP'] != null ? String(r['LAST_CHANGED_TIMESTAMP']) : null,
+      programAttribute: r['PROGRAM_ATTRIBUTE'] != null ? String(r['PROGRAM_ATTRIBUTE']) : '',
+      targetRelease: r['TARGET_RELEASE'] != null ? String(r['TARGET_RELEASE']) : '',
+      activationGroup: r['ACTIVATION_GROUP'] != null ? String(r['ACTIVATION_GROUP']) : '',
+      boundModules,
+    }, null, 2) }] };
+  }
+
+  if (name === 'ibmi_list_user_profiles') {
+    const max = Math.min(args.maxProfiles != null ? Number(args.maxProfiles) : 100, 500);
+    const conds: string[] = [];
+    if (args.nameFilter) { conds.push(`USER_NAME LIKE '${String(args.nameFilter).toUpperCase().replace(/\*/g, '%')}'`); }
+    if (args.status && String(args.status) !== '*ALL') { conds.push(`STATUS = '${String(args.status).toUpperCase()}'`); }
+    const where = conds.length > 0 ? ` WHERE ${conds.join(' AND ')}` : '';
+    const q = `SELECT USER_NAME, STATUS, USER_CLASS_NAME, PREVIOUS_SIGNON, ` +
+      `DAYS_UNTIL_PASSWORD_EXPIRES, NO_PASSWORD_INDICATOR, ` +
+      `${castUtf8('TEXT_DESCRIPTION', 50)} AS TEXT_DESCRIPTION ` +
+      `FROM QSYS2.USER_INFO${where} ORDER BY USER_NAME FETCH FIRST ${max} ROWS ONLY`;
+    const rows = await getConn().runSQL(q) as Record<string, unknown>[];
+    const profiles = rows.map(r => ({
+      userName: String(r['USER_NAME'] ?? ''), status: String(r['STATUS'] ?? ''),
+      userClass: String(r['USER_CLASS_NAME'] ?? ''),
+      previousSignon: r['PREVIOUS_SIGNON'] != null ? String(r['PREVIOUS_SIGNON']) : null,
+      daysUntilPasswordExpires: r['DAYS_UNTIL_PASSWORD_EXPIRES'] != null ? Number(r['DAYS_UNTIL_PASSWORD_EXPIRES']) : null,
+      noPasswordIndicator: String(r['NO_PASSWORD_INDICATOR'] ?? ''),
+      description: r['TEXT_DESCRIPTION'] != null ? String(r['TEXT_DESCRIPTION']) : '',
+    }));
+    return { content: [{ type: 'text', text: JSON.stringify({ profiles, total: profiles.length }, null, 2) }] };
+  }
+
+  if (name === 'ibmi_get_output_queue_info') {
+    const lib = String(args.library).toUpperCase();
+    const outqName = String(args.outq).toUpperCase();
+    const max = Math.min(args.maxFiles != null ? Number(args.maxFiles) : 50, 200);
+    const conds = [`OUTPUT_QUEUE_LIBRARY_NAME = '${lib}'`, `OUTPUT_QUEUE_NAME = '${outqName}'`];
+    if (args.status && String(args.status) !== '*ALL') {
+      const statusMap: Record<string, string> = { '*READY': 'READY', '*HELD': 'HELD', 'READY': 'READY', 'HELD': 'HELD' };
+      const mapped = statusMap[String(args.status).toUpperCase()];
+      if (mapped) { conds.push(`STATUS = '${mapped}'`); }
+    }
+    const q = `SELECT SPOOLED_FILE_NAME, JOB_NAME, JOB_USER_NAME, SPOOLED_FILE_NUMBER, STATUS, TOTAL_PAGES, CREATE_TIMESTAMP ` +
+      `FROM TABLE(QSYS2.SPOOLED_FILE_INFO()) WHERE ${conds.join(' AND ')} ` +
+      `ORDER BY CREATE_TIMESTAMP DESC FETCH FIRST ${max} ROWS ONLY`;
+    const rows = await getConn().runSQL(q) as Record<string, unknown>[];
+    const spoolFiles = rows.map(r => ({
+      splfname: String(r['SPOOLED_FILE_NAME'] ?? ''), job: String(r['JOB_NAME'] ?? ''),
+      jobUser: String(r['JOB_USER_NAME'] ?? ''),
+      splfnbr: Number(r['SPOOLED_FILE_NUMBER'] ?? 0),
+      status: r['STATUS'] != null ? String(r['STATUS']) : '',
+      pages: r['TOTAL_PAGES'] != null ? Number(r['TOTAL_PAGES']) : null,
+      createTime: r['CREATE_TIMESTAMP'] != null ? String(r['CREATE_TIMESTAMP']) : null,
+    }));
+    return { content: [{ type: 'text', text: JSON.stringify({ library: lib, outq: outqName, spoolFiles, total: spoolFiles.length }, null, 2) }] };
   }
 
   throw new Error(`Unknown tool: ${name}`);

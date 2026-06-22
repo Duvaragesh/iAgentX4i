@@ -9,18 +9,63 @@ managed by [Code for IBM i](https://marketplace.visualstudio.com/items?itemName=
 
 ---
 
+## See It In Action
+
+### Your AI is brilliant. Just completely blind to IBM i.
+![Hook](demo/gifs/slide_01_00_hook.gif)
+
+### IBM iAgentX — Bring AI Intelligence to Your IBM i
+![Title](demo/gifs/slide_02_01_title.gif)
+
+### The Challenge — Why AI can't help IBM i developers
+![Challenge](demo/gifs/slide_03_02_challenge.gif)
+
+### Market Gap — How do the options stack up?
+![Market Gap](demo/gifs/slide_04_03_market_gap.gif)
+
+### The Solution — Meet IBM iAgentX
+![Introducing](demo/gifs/slide_05_04_introducing.gif)
+
+### Architecture — How it all connects
+![Architecture](demo/gifs/slide_06_05_architecture.gif)
+
+### Security — Built-in, not bolted-on
+![Security](demo/gifs/slide_07_06_security.gif)
+
+### Capabilities — 29 IBM i Tools
+![Tools](demo/gifs/slide_08_07_tools.gif)
+
+### Demo 1 — Diagnose a job stuck in MSGW
+![Demo MSGW](demo/gifs/slide_09_08_demo1_msgw.gif)
+
+### Demo 2 — Cross-table row count analysis
+![Demo Row Count](demo/gifs/slide_10_09_demo2_rowcount.gif)
+
+### Demo 3 — Debug & fix a SQL table function
+![Demo FK Fix](demo/gifs/slide_11_10_demo3_fk.gif)
+
+### Impact — Before & After iAgentX
+![Impact](demo/gifs/slide_12_11_impact.gif)
+
+### Get Started — Up and running in 3 steps
+![Get Started](demo/gifs/slide_13_12_get_started.gif)
+
+---
+
 ## What you can do
 
 Ask your AI agent to:
 
 - Read and review source members (RPG, CL, COBOL, DDS, …)
+- **Search across source members** — find any string or symbol across a whole source physical file
 - Edit open source members directly from the AI agent — surgical single-line replacements or full updates
-- Browse IFS files and directories
+- Browse IFS files and directories; **search IFS trees recursively** by text content and filename pattern
 - Query DB2 for i with plain SQL
 - Explore objects in a library — list by type, check existence, read data area values, inspect file fields
-- Pull job log messages by job ID — works for active and ended jobs alike
-- Retrieve spool file content (QPJOBLOG and others) from any job
-- Search for jobs by name pattern, user, subsystem, and status
+- Inspect **program and service program details** — ILE attributes, activation group, bound modules
+- Pull job log messages by job ID — works for active and ended jobs alike; **look up CPFxxxx message text** from any message file
+- Retrieve spool file content (QPJOBLOG and others) from any job; **browse spool files on a named output queue**
+- Search for jobs by name pattern, user, subsystem, and status; **list user profiles** with status and last signon
 - Run read-only CL commands (DSPFD, WRKACTJOB, …)
 
 Everything happens through the existing Code for IBM i SSH session.
@@ -106,9 +151,11 @@ The extension only updates this file if it already exists — confirming Bob is 
 | `ibmi_get_source_member` | Read the full source of a library/SPF/member |
 | `ibmi_list_source_members` | List members in a source physical file |
 | `ibmi_list_source_files` | List all source physical files in a library |
+| `ibmi_search_source_members` | Full-text search across all members in a source physical file |
 | `ibmi_list_objects` | List objects in a library by type and name filter |
 | `ibmi_get_object_info` | Detailed attributes of an object (owner, size, timestamps) |
 | `ibmi_check_object` | Check whether an object exists — lightweight existence guard |
+| `ibmi_get_program_info` | Program / service program attributes and bound module list |
 | `ibmi_get_file_fields` | Field definitions for a physical or logical file |
 | `ibmi_get_library_list` | Current library list with type and position |
 
@@ -118,6 +165,7 @@ The extension only updates this file if it already exists — confirming Bob is 
 |---|---|
 | `ibmi_get_ifs_file` | Read a file from the IFS (EBCDIC-aware) |
 | `ibmi_list_ifs_directory` | List contents of an IFS directory |
+| `ibmi_search_ifs` | Recursive text search across an IFS directory tree |
 
 **SQL & data**
 
@@ -126,7 +174,7 @@ The extension only updates this file if it already exists — confirming Bob is 
 | `ibmi_run_sql` | Run a read-only SQL SELECT query against DB2 for i |
 | `ibmi_get_data_area` | Read the current value and attributes of a data area |
 
-**Jobs & diagnostics**
+**Jobs, spool & diagnostics**
 
 | Tool | Description |
 |---|---|
@@ -134,7 +182,20 @@ The extension only updates this file if it already exists — confirming Bob is 
 | `ibmi_find_jobs` | Search for jobs by name pattern, user, subsystem, and status |
 | `ibmi_list_spool_files` | List spool file metadata for a job or user |
 | `ibmi_get_spool_file` | Retrieve spool file content with optional line range |
+| `ibmi_get_output_queue_info` | List spool files on a named output queue |
 | `ibmi_run_cl_command` | Run a read-only CL command; CPYSPLF to `/tmp/` also permitted |
+
+**Users**
+
+| Tool | Description |
+|---|---|
+| `ibmi_list_user_profiles` | List user profiles with status, class, and last sign-on |
+
+**Messages**
+
+| Tool | Description |
+|---|---|
+| `ibmi_get_message_description` | Look up message text and second-level help for CPFxxxx / MCHxxxx / SQLxxxx codes |
 
 **Editor (VS Code)**
 
@@ -191,7 +252,7 @@ second window's AI tools route through the same server. No extra ports are used.
 
 ## Security
 
-- Read tools are **read-only** — no write, delete, or compile operations
+- All 29 tools are **read-only** — no write, delete, or compile operations
 - Editor tools (`ibmi_update_*`, `ibmi_replace_*`) only modify files **open in the editor** — no blind remote writes
 - `ibmi_run_sql` only accepts SELECT, WITH (CTEs), and VALUES statements
 - `ibmi_run_cl_command` enforces a configurable verb-prefix allowlist; CPYSPLF is only permitted with `TOFILE(*TOSTMF)` and a destination under `/tmp/`
@@ -217,6 +278,95 @@ icon will return to `✓` automatically.
 
 **Port changed between restarts**
 Click the status bar item → **Refresh iAgentX config**, then restart Claude Code.
+
+---
+
+## Development
+
+### Testing overview
+
+There are two independent test layers:
+
+| Layer | Framework | Needs IBM i? | Command |
+|---|---|---|---|
+| Unit | Vitest | No | `npm test` |
+| Integration | Mocha via `@vscode/test-cli` | Yes | `npm run test:int` |
+
+---
+
+### Unit tests
+
+All IBM i and VS Code APIs are mocked — runs instantly in Node.js with no live system.
+
+**Run once:**
+```bash
+npm test
+```
+
+**Watch mode** (re-runs on file save during development):
+```bash
+npm run test:watch
+```
+
+**Coverage report** (generates `coverage/index.html`):
+```bash
+npm run test:coverage
+```
+
+Unit tests cover all 28 tools plus utilities — 124 tests across 30 files.
+
+---
+
+### Integration tests
+
+Integration tests run **inside a real VS Code extension host** using [`@vscode/test-cli`](https://github.com/microsoft/vscode-test-cli) with Mocha. This gives access to the real `vscode` API and the live IBM i connection managed by Code for IBM i.
+
+**Prerequisites:**
+- VS Code installed
+- Code for IBM i extension installed and connected to an IBM i system
+- Run the command from a terminal where VS Code is accessible on `PATH`
+
+**Run:**
+```bash
+npm run test:int
+```
+
+This does two things:
+1. Compiles the integration tests (`tsc -p tsconfig.int.json`)
+2. Launches a headless VS Code instance, activates the extension, and runs the Mocha suites against the real IBM i system
+
+**What is tested:**
+- `connectionStatus` — verifies host, user, and OS version from a live connection
+- `runSql` — executes a real SELECT against `QSYS2.LIBRARY_LIST_INFO`; verifies DML is blocked
+- `getLibraryList` — confirms `QSYS` appears in the real library list
+- `listSourceFiles` — lists source files in `QSYS`
+- `runSql` pagination — verifies `maxRows` and `offset` work against real data
+
+---
+
+### Publish gate
+
+`npm run package` and `npm run publish` both run `npm test` (unit tests) first. Integration tests are a separate manual step — run them before cutting a release when an IBM i system is available.
+
+---
+
+### Test structure
+
+```
+src/tests/
+├── __mocks__/           # Shared vscode + ibmiConnection stubs (used by unit tests)
+├── utils/               # parseEditorUri, ccsidCast, qsysPath
+├── tools/
+│   ├── source/          # getSourceMember, listSourceMembers, listSourceFiles, searchSourceMembers
+│   ├── ifs/             # getIfsFile, listIfsDirectory, searchIfs
+│   ├── sql/             # runSql, getFileFields, getLibraryList
+│   ├── jobs/            # findJobs, getJobLog, getSpoolFile, listSpoolFiles
+│   ├── objects/         # listObjects, getObjectInfo, checkObject, getDataArea, getProgramInfo, getOutputQueueInfo
+│   ├── admin/           # listUserProfiles, getMessageDescription
+│   ├── editor/          # getActiveEditor, listOpenEditors, updateActiveEditor, updateEditorByUri
+│   └── connection/      # connectionStatus
+└── integration/         # Mocha suites — run via @vscode/test-cli against live IBM i
+```
 
 ---
 

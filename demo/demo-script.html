@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IBM iAgentX — Demo Speech Script</title>
+<style>
+  :root {
+    --ibm-blue: #0043CE;
+    --ibm-blue-light: #4589FF;
+    --ibm-cyan: #00B0E9;
+    --ibm-green: #00a550;
+    --ibm-green-light: #42be65;
+    --vscode-dark: #1e1e1e;
+    --vscode-sidebar: #252526;
+    --vscode-border: #3e3e3e;
+    --text-primary: #f0f0f0;
+    --text-secondary: #a8a8a8;
+    --text-muted: #6f6f6f;
+    --accent-gold: #f1c21b;
+    --accent-red: #da1e28;
+    --accent-purple: #8a3ffc;
+    --card-bg: #2a2a2a;
+    --card-border: #3a3a3a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0d0d0d;
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── TOP BAR ── */
+  .top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(13,13,13,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--vscode-border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .top-bar-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .ibm-badge {
+    background: var(--ibm-blue);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+  .top-bar-title h1 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: -0.3px;
+  }
+  .top-bar-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ctrl-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    color: var(--text-secondary);
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    font-family: inherit;
+  }
+  .ctrl-btn:hover { background: #383838; color: #fff; }
+  .ctrl-btn.active { background: var(--ibm-blue); color: #fff; border-color: var(--ibm-blue); }
+
+  /* ── PROGRESS ── */
+  #progress-wrap {
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+  }
+  #progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--ibm-blue), var(--ibm-cyan));
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  /* ── LAYOUT ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - 58px);
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    background: var(--vscode-sidebar);
+    border-right: 1px solid var(--vscode-border);
+    padding: 20px 0;
+    position: sticky;
+    top: 58px;
+    height: calc(100vh - 58px);
+    overflow-y: auto;
+  }
+  .sidebar-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 0 18px 10px;
+    font-weight: 600;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 18px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.04); }
+  .nav-item.active {
+    background: rgba(0,176,233,0.08);
+    border-left-color: var(--ibm-cyan);
+  }
+  .nav-item-num {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    min-width: 20px;
+    font-family: monospace;
+  }
+  .nav-item.active .nav-item-num { color: var(--ibm-cyan); }
+  .nav-item-label {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.3;
+  }
+  .nav-item.active .nav-item-label { color: #fff; }
+
+  /* ── MAIN CONTENT ── */
+  .main {
+    padding: 40px 56px;
+    max-width: 860px;
+  }
+
+  /* ── SLIDE SECTION ── */
+  .slide-section {
+    margin-bottom: 52px;
+    scroll-margin-top: 80px;
+  }
+  .slide-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--vscode-border);
+  }
+  .slide-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-family: monospace;
+  }
+  .slide-num.hook     { background: rgba(218,30,40,0.2);   color: var(--accent-red); }
+  .slide-num.title    { background: rgba(0,67,206,0.25);   color: var(--ibm-blue-light); }
+  .slide-num.challenge{ background: rgba(138,63,252,0.2);  color: #a56eff; }
+  .slide-num.market   { background: rgba(0,176,233,0.15);  color: var(--ibm-cyan); }
+  .slide-num.intro    { background: rgba(0,67,206,0.25);   color: var(--ibm-blue-light); }
+  .slide-num.arch     { background: rgba(0,176,233,0.15);  color: var(--ibm-cyan); }
+  .slide-num.security { background: rgba(0,165,80,0.2);    color: var(--ibm-green-light); }
+  .slide-num.tools    { background: rgba(0,67,206,0.25);   color: var(--ibm-blue-light); }
+  .slide-num.demo1    { background: rgba(0,176,233,0.15);  color: var(--ibm-cyan); }
+  .slide-num.demo2    { background: rgba(138,63,252,0.2);  color: #a56eff; }
+  .slide-num.impact   { background: rgba(0,165,80,0.2);    color: var(--ibm-green-light); }
+  .slide-num.start    { background: rgba(241,194,27,0.15); color: var(--accent-gold); }
+
+  .slide-title-wrap h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+  }
+  .slide-title-wrap .slide-tag {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 3px;
+    letter-spacing: 0.3px;
+  }
+
+  /* ── SPEECH BLOCK ── */
+  .speech-block {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    position: relative;
+    margin-bottom: 16px;
+  }
+  .speech-block::before {
+    content: '"';
+    position: absolute;
+    top: -8px;
+    left: 20px;
+    font-size: 52px;
+    color: var(--ibm-cyan);
+    opacity: 0.25;
+    font-family: Georgia, serif;
+    line-height: 1;
+  }
+  .speech-text {
+    font-size: 15px;
+    line-height: 1.85;
+    color: var(--text-primary);
+    font-style: italic;
+  }
+  .speech-text em {
+    font-style: normal;
+    color: var(--ibm-cyan);
+    font-weight: 600;
+  }
+  .speech-text strong {
+    font-style: normal;
+    color: #fff;
+    font-weight: 700;
+  }
+
+  /* ── SPEAKER NOTES ── */
+  .notes-block {
+    background: rgba(241,194,27,0.05);
+    border: 1px solid rgba(241,194,27,0.2);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    gap: 10px;
+  }
+  .notes-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .notes-text { font-size: 13px; color: var(--accent-gold); line-height: 1.6; opacity: 0.85; }
+
+  /* ── TIMING BADGE ── */
+  .timing-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .timing-badge {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-family: monospace;
+  }
+
+  /* ── SUMMARY FOOTER ── */
+  .summary-footer {
+    margin-top: 20px;
+    padding: 24px 28px;
+    background: linear-gradient(135deg, rgba(0,67,206,0.12), rgba(0,176,233,0.08));
+    border: 1px solid rgba(0,176,233,0.2);
+    border-radius: 12px;
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .summary-stat { text-align: center; }
+  .summary-stat-num {
+    font-size: 28px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--ibm-cyan), var(--ibm-green-light));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1;
+  }
+  .summary-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  /* ── PRINT MODE ── */
+  body.print-mode .top-bar,
+  body.print-mode .sidebar { display: none; }
+  body.print-mode .layout { grid-template-columns: 1fr; }
+  body.print-mode .main { max-width: 100%; padding: 32px; }
+  body.print-mode .slide-section { page-break-inside: avoid; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  @media print {
+    .top-bar, .sidebar, .controls { display: none !important; }
+    .layout { grid-template-columns: 1fr !important; }
+    .main { padding: 24px !important; max-width: 100% !important; }
+    body { background: #fff !important; color: #000 !important; }
+    .slide-section { page-break-inside: avoid; }
+    .speech-block { background: #f9f9f9 !important; border-color: #ddd !important; }
+    .speech-text { color: #111 !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="top-bar-title">
+    <span class="ibm-badge">IBM</span>
+    <h1>iAgentX — Demo Speech Script</h1>
+  </div>
+  <div class="controls">
+    <span class="top-bar-meta">12 slides &nbsp;·&nbsp; ~7 min</span>
+    <button class="ctrl-btn" onclick="window.print()">🖨 Print</button>
+  </div>
+</div>
+<div id="progress-wrap"><div id="progress-bar"></div></div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-label">Slides</div>
+    <a class="nav-item active" href="#s0"><span class="nav-item-num">00</span><span class="nav-item-label">Hook</span></a>
+    <a class="nav-item" href="#s1"><span class="nav-item-num">01</span><span class="nav-item-label">Title</span></a>
+    <a class="nav-item" href="#s2"><span class="nav-item-num">02</span><span class="nav-item-label">The Challenge</span></a>
+    <a class="nav-item" href="#s3"><span class="nav-item-num">03</span><span class="nav-item-label">Market Gap</span></a>
+    <a class="nav-item" href="#s4"><span class="nav-item-num">04</span><span class="nav-item-label">Introducing iAgentX</span></a>
+    <a class="nav-item" href="#s5"><span class="nav-item-num">05</span><span class="nav-item-label">Architecture</span></a>
+    <a class="nav-item" href="#s6"><span class="nav-item-num">06</span><span class="nav-item-label">Security</span></a>
+    <a class="nav-item" href="#s7"><span class="nav-item-num">07</span><span class="nav-item-label">23 Tools</span></a>
+    <a class="nav-item" href="#s8"><span class="nav-item-num">08</span><span class="nav-item-label">Demo 1</span></a>
+    <a class="nav-item" href="#s9"><span class="nav-item-num">09</span><span class="nav-item-label">Demo 2</span></a>
+    <a class="nav-item" href="#s10"><span class="nav-item-num">10</span><span class="nav-item-label">Before &amp; After</span></a>
+    <a class="nav-item" href="#s11"><span class="nav-item-num">11</span><span class="nav-item-label">Get Started</span></a>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ── SLIDE 0 ── -->
+    <section class="slide-section" id="s0">
+      <div class="slide-header">
+        <div class="slide-num hook">00</div>
+        <div class="slide-title-wrap">
+          <h2>Hook</h2>
+          <div class="slide-tag">Opening — set the scene</div>
+        </div>
+      </div>
+      <div class="speech-block">
+        <p class="speech-text">
+          "This is what happens when you ask your AI assistant about IBM i code today.
+          Error. Error. Error.
+          It's not that the AI is bad —
+          it's just <em>completely blind</em> to your system.
+          That's the problem we're solving."
+        </p>
+      </div>
+      <div class="notes-block">
+        <span class="notes-icon">💡</span>
+        <span class="notes-text">Let the terminal animation play out — the comedic timing of each error landing one by one does the work. Pause briefly before the last line.</span>
+      </div>
+      <div class="timing-row"><span class="timing-badge">~20 sec</span></div>
+    </section>
+
+    <!-- ── SLIDE 1 ── -->
+    <section class="slide-section" id="s1">
+      <div class="slide-header">
+        <div class="slide-num title">01</div>
+        <div class="slide-title-wrap">
+          <h2>Title — Bring AI Intelligence to Your IBM i</h2>
+          <div class="slide-tag">What iAgentX is</div>
+        </div>
+      </div>
+      <div class="speech-block">
+        <p class="speech-text">
+          "IBM iAgentX bridges that gap. It connects <em>Claude Code</em>, <em>GitHub Copilot</em>, and <em>IBM Bob</em>
+          directly into your IBM i — reading source members, querying DB2, pulling job logs.
+          <strong>Free. Secure. Available right now</strong> on the VS Code Marketplace."
+        </p>
+      </div>
+      <div class="notes-block">
+        <span class="notes-icon">💡</span>
+        <span class="notes-text">Keep it short — the title slide is a visual moment. Let the terminal animation on the right breathe.</span>
+      </div>
+      <div class="timing-row"><span class="timing-badge">~25 sec</span></div>
+    </section>
+
+    <!-- ── SLIDE 2 ── -->
+    <section class="slide-section" id="s2">
+      <div class="slide-header">
+        <div class="slide-num challenge">02</div>
+        <div class="slide-title-wrap">
+          <h2>The Challenge</h2>
+          <div class="slide-tag">Why AI can't help IBM i developers — yet</div>
+        </div>
+      </div>
+      <div class="speech-block">
+        <p class="speech-text">
+          "The real issue is <em>awareness</em>. Copilot can actually call Code for IBM i extension commands —
+          but <strong>only if you explicitly tell it those tools exist</strong>. Without that context, it won't go looking.
+          Claude Code and IBM Bob have no IBM i access at all.
+          And the one vendor adding real integration — IBM Bob — is making it a <strong>paid feature launching June 24th</strong>.
+          iAgentX solves this by automatically giving the AI full context of every available IBM i tool — no prompting required."
+        </p>
+      </div>
+      <div class="notes-block">
+        <span class="notes-icon">💡</span>
+        <span class="notes-text">Pause on "only if you tell it" — this is the nuance that surprises developers who tried Copilot and assumed it worked automatically.</span>
+      </div>
+      <div class="timing-row"><span class="timing-badge">~40 sec</span></div>
+    </section>
+
+    <!-- ── SLIDE 3 ── -->
+    <section class="slide-section" id="s3">
+      <div class="slide-header">
+        <div class="slide-num market">03</div>
+        <div class="slide-title-wrap">
+          <h2>Market Gap</h2>
+          <div class="slide-tag">How the options stack up</div>
+        </div>
+      </div>
+      <div class="speech-block">
+        <p class="speech-text">
+          "Here's how the options stack up. Copilot gets partial credit — it can reach IBM i <em>if you prompt it correctly</em>.
+          But that's the catch: you have to know which tools exist and mention them every time.
+          Bob today — nothing. Bob after June 24th — some access, at a premium.
+          iAgentX — <strong>full access, proactive tool context, free, today</strong>."
+        </p>
+      </div>
+      <div class="notes-block">
+        <span class="notes-icon">💡</span>
+        <span class="notes-text">Run your finger along the last column — the green checkmarks speak for themselves. Don't over-explain the table.</span>
+      </div>
+      <div class="timing-row"><span class="timing-badge">~30 sec</span></div>
+    </section>
+
+    <!-- ── SLIDE 4 ── -->
+    <section class="slide-section" id="s4">
+      <div class="slide-header">
+        <div class="slide-num intro">04</div>
+        <div class="slide-title-wrap">
+          <h2>Introducing iAgentX</h2>
+          <div class="slide-tag">The solution</div>
+        </div>
+      </div>
+      <div class="speech-block">
+        <p class="speech-text">
+          "iAgentX is a VS Code extension. <em>Install it — that's it.</em>
+          It auto-configures Claude Code, Copilot, and IBM Bob on first launch. No manual MCP setup.
+          And crucially, it <strong>reuses the SSH connection</strong> you already have from Code for IBM i —
+          no new credentials, no extra setup."
+        </p>
+      </div>
+      <div class="notes-block">
+        <span class="notes-icon">💡</span>
+        <span class="notes-text">Emphasise "reuses your connection" — this is the biggest friction-removal point for enterprise teams with strict credential policies.</span>
+      </div>
+      <div class="timing-row"><span class="timing-badge">~30 sec</span></div>
+    </section>
+
+    <!-- ── SLIDE 5 ── -->
+    <section class="slide-section" id="s5">
+      <div class="slide-header">
+        <div class="slide-num arch">05</div>
+        <div class="slide-title-wrap">
+          <h2>Architecture</h2>
+          <div class="slide-tag">How it all connects</div>
+        </div>
+      </div>
+      <div class="speech-block">
+        <p class="speech-text">
+          "Under the hood it's a lightweight <em>MCP server</em> running inside the VS Code extension host,
+          bound only to localhost. AI agents call it over HTTP — it forwards requests through
+          Code for IBM i's existing SSH session.
+          <strong>Nothing is exposed to the network.</strong>
+          One server instance serves all your VS Code windows."
+        </p>
+      </div>
+      <div class="notes-block">
+        <span class="notes-icon">💡</span>
+        <span class="notes-text">Point to the diagram layers as you speak. You don't need to explain every layer — just trace the path: AI → iAgentX → SSH → IBM i.</span>
+      </div>
+      <div class="timing-row"><span class="timing-badge">~35 sec</span></div>
+    </section>
+
+    <!-- ── SLIDE 6 ── -->
+    <section class="slide-section" id="s6">
+      <div class="slide-header">
+        <div class="slide-num security">06</div>
+        <div class="slide-title-wrap">
+          <h2>Security</h2>
+          <div class="slide-tag">Built-in, not bolted-on</div>
+        </div>
+      </div>
+      <div class="speech-block">
+        <p class="speech-text">
+          "Security was designed in from day one.
+          The AI runs under <em>your own IBM i user profile</em> — no service accounts, no elevated privileges.
+          SQL is strictly read-only — <em>SELECT, WITH, VALUES only</em> — enforced at the extension layer, not just a convention.
+          CL commands are allowlisted to display and diagnostic verbs only.
+          And editor writes <strong>only touch files you already have open.</strong>"
+        </p>
+      </div>
+      <div class="notes-block">
+        <span class="notes-icon">💡</span>
+        <span class="notes-text">This slide often generates questions in enterprise settings. Be ready for "what if someone modifies the allowlist?" — answer: it's open source, auditable, and enforced server-side.</span>
+      </div>
+      <div class="timing-row"><span class="timing-badge">~40 sec</span></div>
+    </section>
+
+    <!-- ── SLIDE 7 ── -->
+    <section class="slide-section" id="s7">
+      <div class="slide-header">
+        <div class="slide-num tools">07</div>
+        <div class="slide-title-wrap">
+          <h2>23 IBM i Tools</h2>
+          <div class="slide-tag">At your AI's fingertips</div>
+        </div>
+      </div>
+      <div class="speech-block">
+        <p class="speech-text">
+          "That translates to <em>23 purpose-built tools</em> — source members, objects, IFS,
+          SQL, job logs, spool files, CL diagnostics, and full VS Code editor integration.
+          Every tool available to <strong>all three AI clients simultaneously</strong>,
+          the moment you install."
+        </p>
+      </div>
+      <div class="notes-block">
+        <span class="notes-icon">💡</span>
+        <span class="notes-text">You don't need to read every chip — gesture at the categories and let the audience scan. Keep the pace up here.</span>
+      </div>
+      <div class="timing-row"><span class="timing-badge">~25 sec</span></div>
+    </section>
+
+    <!-- ── SLIDE 8 ── -->
+    <section class="slide-section" id="s8">
+      <div class="slide-header">
+        <div class="slide-num demo1">08</div>
+        <div class="slide-title-wrap">
+          <h2>Demo 1 — Row Count Analysis</h2>
+          <div class="slide-tag">Cross-table row count across a full schema</div>
+        </div>
+      </div>
+      <div class="speech-block">
+        <p class="speech-text">
+          "Let's see it in action. I ask Claude Code:
+          <em>'Get row counts for all main tables and their history tables in ECMDTZDTA.'</em>
+          It calls <em>ibmi_run_sql</em>, queries the system catalog,
+          dynamically builds the COUNT queries, and returns a clean result —
+          <strong>18 table pairs in seconds.</strong>
+          Manually writing that SQL would take most developers 20 minutes."
+        </p>
+      </div>
+      <div class="notes-block">
+        <span class="notes-icon">💡</span>
+        <span class="notes-text">If running live — paste the prompt and let it run in real time. The tool call appearing in chat is the "wow moment." Point it out explicitly.</span>
+      </div>
+      <div class="timing-row"><span class="timing-badge">~40 sec</span></div>
+    </section>
+
+    <!-- ── SLIDE 9 ── -->
+    <section class="slide-section" id="s9">
+      <div class="slide-header">
+        <div class="slide-num demo2">09</div>
+        <div class="slide-title-wrap">
+          <h2>Demo 2 — Fix FK Hierarchy Function</h2>
+          <div class="slide-tag">Debug &amp; fix a SQL table function</div>
+        </div>
+      </div>
+      <div class="speech-block">
+        <p class="speech-text">
+          "Second demo — a real debugging scenario. A SQL table function is returning <em>level 1 for every table</em>,
+          ignoring all the FK relationships. I ask Claude Code to investigate.
+          It reads the open source member <strong>directly from my editor</strong> using <em>ibmi_get_active_editor</em> —
+          no copy-paste — then queries the FK catalog.
+          Root cause: wrong column name in the recursive CTE join.
+          It finds it, fixes it, and gives me the CREATE statement
+          <strong>ready to deploy to library DK.</strong>
+          That's the key point — the AI saw my open file without me doing anything."
+        </p>
+      </div>
+      <div class="notes-block">
+        <span class="notes-icon">💡</span>
+        <span class="notes-text">Stress "without me doing anything" — the audience should feel the friction that just disappeared. This is the most technically impressive moment of the demo.</span>
+      </div>
+      <div class="timing-row"><span class="timing-badge">~55 sec</span></div>
+    </section>
+
+    <!-- ── SLIDE 10 ── -->
+    <section class="slide-section" id="s10">
+      <div class="slide-header">
+        <div class="slide-num impact">10</div>
+        <div class="slide-title-wrap">
+          <h2>Before &amp; After iAgentX</h2>
+          <div class="slide-tag">Impact on the day-to-day workflow</div>
+        </div>
+      </div>
+      <div class="speech-block">
+        <p class="speech-text">
+          "The difference in workflow is significant. Before: manual copy-paste, context-switching between VS Code,
+          a 5250 terminal, and a chat window — the AI working completely blind.
+          After: <em>one chat window</em>, the AI reads your source directly,
+          sees your open editors in real time, has full access to job logs and diagnostics.
+          <strong>Zero extra credentials. Twenty-three tools. Three AI clients. Zero cost.</strong>"
+        </p>
+      </div>
+      <div class="notes-block">
+        <span class="notes-icon">💡</span>
+        <span class="notes-text">Read the four stat boxes slowly and with weight — "zero dollars" always lands well as the final note before the closing slide.</span>
+      </div>
+      <div class="timing-row"><span class="timing-badge">~40 sec</span></div>
+    </section>
+
+    <!-- ── SLIDE 11 ── -->
+    <section class="slide-section" id="s11">
+      <div class="slide-header">
+        <div class="slide-num start">11</div>
+        <div class="slide-title-wrap">
+          <h2>Get Started</h2>
+          <div class="slide-tag">Up and running in 3 steps</div>
+        </div>
+      </div>
+      <div class="speech-block">
+        <p class="speech-text">
+          "Three steps. Install <em>Code for IBM i</em> if you haven't already.
+          Install <em>IBM iAgentX</em> from the VS Code Marketplace or Open VSX Marketplace.
+          Open Claude Code — <strong>it's already configured.</strong> That's it.
+          The extension is open source under MIT.
+          Links are on screen. Happy to take questions."
+        </p>
+      </div>
+      <div class="notes-block">
+        <span class="notes-icon">💡</span>
+        <span class="notes-text">End on the closing tagline on screen — "Your IBM i. Your AI. Connected." — then go quiet and open the floor. Don't rush past it.</span>
+      </div>
+      <div class="timing-row"><span class="timing-badge">~30 sec</span></div>
+    </section>
+
+    <!-- ── SUMMARY ── -->
+    <div class="summary-footer">
+      <div class="summary-stat">
+        <div class="summary-stat-num">12</div>
+        <div class="summary-stat-label">slides</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-num">~7</div>
+        <div class="summary-stat-label">minutes total</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-num">2</div>
+        <div class="summary-stat-label">live demos</div>
+      </div>
+      <div style="flex:1; font-size:13px; color:var(--text-muted); line-height:1.7;">
+        Slides 8 &amp; 9 may run longer with a live connection. Build in ~2 min buffer for Q&amp;A after slide 11.
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  /* Progress bar on scroll */
+  const main = document.querySelector('.main');
+  window.addEventListener('scroll', () => {
+    const scrolled = window.scrollY;
+    const total = document.body.scrollHeight - window.innerHeight;
+    document.getElementById('progress-bar').style.width = (scrolled / total * 100) + '%';
+  });
+
+  /* Active sidebar item on scroll */
+  const sections = document.querySelectorAll('.slide-section');
+  const navItems = document.querySelectorAll('.nav-item');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        navItems.forEach(n => {
+          n.classList.toggle('active', n.getAttribute('href') === '#' + id);
+        });
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

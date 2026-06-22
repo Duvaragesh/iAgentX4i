@@ -310,3 +310,140 @@ export interface GetLibraryListOutput {
   libraries: LibraryEntry[];
   total: number;
 }
+
+// Phase 1: new read-only tools
+
+export interface SearchSourceMembersInput {
+  library: string;
+  spf: string;
+  searchTerm: string;
+  memberFilter?: string;
+  maxResults?: number;
+}
+
+export interface SourceSearchHit {
+  library: string;
+  spf: string;
+  member: string;
+  lineNumber: number | null;
+  lineText: string;
+}
+
+export interface SearchSourceMembersOutput {
+  library: string;
+  spf: string;
+  searchTerm: string;
+  hits: SourceSearchHit[];
+  total: number;
+}
+
+export interface SearchIfsInput {
+  path: string;
+  searchTerm: string;
+  filePattern?: string;
+  caseSensitive?: boolean;
+  maxFiles?: number;
+}
+
+export interface IfsSearchMatch {
+  path: string;
+  matchCount: number;
+  sampleLines: string[];
+}
+
+export interface SearchIfsOutput {
+  rootPath: string;
+  searchTerm: string;
+  matchingFiles: IfsSearchMatch[];
+  total: number;
+}
+
+export interface GetMessageDescriptionInput {
+  library: string;
+  msgf: string;
+  messageId: string;
+}
+
+export interface GetMessageDescriptionOutput {
+  found: boolean;
+  library: string;
+  msgf: string;
+  messageId: string;
+  messageText?: string;
+  secondLevelText?: string;
+  severity?: number | null;
+}
+
+export interface GetProgramInfoInput {
+  library: string;
+  program: string;
+  objectType?: string;
+}
+
+export interface BoundModuleInfo {
+  moduleLibrary: string;
+  module: string;
+  attribute: string;
+}
+
+export interface GetProgramInfoOutput {
+  exists: boolean;
+  library: string;
+  program: string;
+  objectType: string;
+  attribute?: string;
+  description?: string;
+  owner?: string;
+  size?: number | null;
+  createTime?: string | null;
+  lastModifiedTime?: string | null;
+  programAttribute?: string;
+  targetRelease?: string;
+  activationGroup?: string;
+  boundModules: BoundModuleInfo[];
+}
+
+export interface ListUserProfilesInput {
+  nameFilter?: string;
+  status?: string;
+  maxProfiles?: number;
+}
+
+export interface UserProfileInfo {
+  userName: string;
+  status: string;
+  userClass: string;
+  previousSignon: string | null;
+  daysUntilPasswordExpires: number | null;
+  noPasswordIndicator: string;
+  description: string;
+}
+
+export interface ListUserProfilesOutput {
+  profiles: UserProfileInfo[];
+  total: number;
+}
+
+export interface GetOutputQueueInfoInput {
+  library: string;
+  outq: string;
+  status?: string;
+  maxFiles?: number;
+}
+
+export interface OutputQueueSpoolFile {
+  splfname: string;
+  job: string;
+  jobUser: string;
+  splfnbr: number;
+  status: string;
+  pages: number | null;
+  createTime: string | null;
+}
+
+export interface GetOutputQueueInfoOutput {
+  library: string;
+  outq: string;
+  spoolFiles: OutputQueueSpoolFile[];
+  total: number;
+}
