@@ -2,7 +2,7 @@
   "name": "ibm-iagentx",
   "displayName": "IBM iAgentX",
   "description": "Extends IBM i resources (source members, IFS, SQL, job logs) into VS Code AI agents — GitHub Copilot Chat and Claude Code — via MCP.",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "publisher": "Duvaragesh",
   "license": "MIT",
   "icon": "images/logo.png",
@@ -11,7 +11,9 @@
     "url": "https://github.com/Duvaragesh/ibm-iagentx"
   },
   "engines": {
-    "vscode": "^1.99.0"
+    "vscode": "^1.99.0",
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   },
   "categories": [
     "Other",
@@ -103,8 +105,9 @@
     "setup:int": "node scripts/setup-int-test-profile.js",
     "compile:int": "tsc -p tsconfig.int.json",
     "test:int": "npm run setup:int && npm run compile:int && vscode-test",
-    "package": "npm run test && npm run compile && vsce package --readme-path MARKETPLACE.md",
-    "publish": "npm run test && npm run compile && vsce publish --readme-path MARKETPLACE.md"
+    "prepackage": "npm install",
+    "package": "npm run test && npm run compile && vsce package",
+    "publish": "npm run test && npm run compile && vsce publish"
   },
   "devDependencies": {
     "@halcyontech/vscode-ibmi-types": "^2.0.0",

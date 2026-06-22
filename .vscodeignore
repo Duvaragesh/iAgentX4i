@@ -4,7 +4,12 @@ src/**
 node_modules/**
 *.map
 tsconfig.json
+tsconfig.int.json
+vitest.config.ts
+scripts/**
 PLAN_VSCODE_IBMI_MCP.md
 README.md
 .gitignore
 .vscodeignore
+.nvmrc
+.vscode-test.mjs

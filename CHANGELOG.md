@@ -2,6 +2,17 @@
 
 All notable changes to IBM iAgentX are documented here.
 
+## [0.2.3] - 2026-06-22
+
+### Improved
+
+- **Documentation** — merged MARKETPLACE.md and README.md into a single `README.md`. The file now covers both the user-facing marketplace content (demo GIFs, feature overview, tool reference, setup guides) and developer documentation (build from source, unit tests, integration tests, test structure) in one place. MARKETPLACE.md has been removed.
+- **VSIX package size** — updated `.vscodeignore` to exclude `tsconfig.int.json`, `vitest.config.ts`, `scripts/`, `.nvmrc`, and `.vscode-test.mjs` from the packaged extension. These files are development artefacts and have no effect at runtime.
+- **Dependency setup** — added a `prepackage` npm lifecycle script so that `npm run package` automatically runs `npm install` first. Developers can now go from a fresh clone to a built `.vsix` with a single command.
+- **Node version requirement** — added `engines.node` (`>=18.0.0`) and `engines.npm` (`>=8.0.0`) to `package.json` so `npm install` warns when the environment is too old. Added `.nvmrc` (Node 18) for automatic version switching with `nvm`.
+
+---
+
 ## [0.2.2] - 2026-06-19
 
 ### Added
