@@ -199,7 +199,10 @@
   .slide-num.security { background: rgba(0,165,80,0.2);    color: var(--ibm-green-light); }
   .slide-num.tools    { background: rgba(0,67,206,0.25);   color: var(--ibm-blue-light); }
   .slide-num.demo1    { background: rgba(0,176,233,0.15);  color: var(--ibm-cyan); }
-  .slide-num.demo2    { background: rgba(138,63,252,0.2);  color: #a56eff; }
+  .slide-num.demo2    { background: rgba(0,165,80,0.2);    color: var(--ibm-green-light); }
+  .slide-num.demo3    { background: rgba(138,63,252,0.2);  color: #a56eff; }
+  .slide-num.demo4    { background: rgba(0,176,233,0.15);  color: var(--ibm-cyan); }
+  .slide-num.demo5    { background: rgba(138,63,252,0.2);  color: #a56eff; }
   .slide-num.impact   { background: rgba(0,165,80,0.2);    color: var(--ibm-green-light); }
   .slide-num.start    { background: rgba(241,194,27,0.15); color: var(--accent-gold); }
 
@@ -339,7 +342,7 @@
     <h1>iAgentX for IBM i — Demo Speech Script</h1>
   </div>
   <div class="controls">
-    <span class="top-bar-meta">12 slides &nbsp;·&nbsp; ~7 min</span>
+    <span class="top-bar-meta">15 slides &nbsp;·&nbsp; ~10 min</span>
     <button class="ctrl-btn" onclick="window.print()">🖨 Print</button>
   </div>
 </div>
@@ -358,11 +361,14 @@
     <a class="nav-item" href="#s4"><span class="nav-item-num">04</span><span class="nav-item-label">Introducing iAgentX</span></a>
     <a class="nav-item" href="#s5"><span class="nav-item-num">05</span><span class="nav-item-label">Architecture</span></a>
     <a class="nav-item" href="#s6"><span class="nav-item-num">06</span><span class="nav-item-label">Security</span></a>
-    <a class="nav-item" href="#s7"><span class="nav-item-num">07</span><span class="nav-item-label">23 Tools</span></a>
-    <a class="nav-item" href="#s8"><span class="nav-item-num">08</span><span class="nav-item-label">Demo 1</span></a>
-    <a class="nav-item" href="#s9"><span class="nav-item-num">09</span><span class="nav-item-label">Demo 2</span></a>
-    <a class="nav-item" href="#s10"><span class="nav-item-num">10</span><span class="nav-item-label">Before &amp; After</span></a>
-    <a class="nav-item" href="#s11"><span class="nav-item-num">11</span><span class="nav-item-label">Get Started</span></a>
+    <a class="nav-item" href="#s7"><span class="nav-item-num">07</span><span class="nav-item-label">29 Tools</span></a>
+    <a class="nav-item" href="#s8"><span class="nav-item-num">08</span><span class="nav-item-label">Demo 1 — MSGW</span></a>
+    <a class="nav-item" href="#s9"><span class="nav-item-num">09</span><span class="nav-item-label">Demo 2 — IFS</span></a>
+    <a class="nav-item" href="#s10"><span class="nav-item-num">10</span><span class="nav-item-label">Demo 3 — Source</span></a>
+    <a class="nav-item" href="#s11"><span class="nav-item-num">11</span><span class="nav-item-label">Demo 4 — Row Count</span></a>
+    <a class="nav-item" href="#s12"><span class="nav-item-num">12</span><span class="nav-item-label">Demo 5 — FK Fix</span></a>
+    <a class="nav-item" href="#s13"><span class="nav-item-num">13</span><span class="nav-item-label">Before &amp; After</span></a>
+    <a class="nav-item" href="#s14"><span class="nav-item-num">14</span><span class="nav-item-label">Get Started</span></a>
   </nav>
 
   <!-- MAIN -->
@@ -406,7 +412,7 @@
         <p class="speech-text">
           "iAgentX for IBM i bridges that gap. It connects <em>Claude Code</em>, <em>GitHub Copilot</em>, and <em>IBM Bob</em>
           directly into your IBM i — reading source members, querying DB2, pulling job logs.
-          <strong>Free. Secure. Available right now</strong> on the VS Code Marketplace."
+          <strong>Free to use. Secure. Available right now</strong> on the VS Code Marketplace."
         </p>
       </div>
       <div class="notes-block">
@@ -534,7 +540,7 @@
       </div>
       <div class="notes-block">
         <span class="notes-icon">💡</span>
-        <span class="notes-text">This slide often generates questions in enterprise settings. Be ready for "what if someone modifies the allowlist?" — answer: it's open source, auditable, and enforced server-side.</span>
+        <span class="notes-text">This slide often generates questions in enterprise settings. Be ready for "what if someone modifies the allowlist?" — answer: it's auditable source code, enforced server-side, and licensed under Elastic License 2.0 so the community can review it.</span>
       </div>
       <div class="timing-row"><span class="timing-badge">~40 sec</span></div>
     </section>
@@ -544,13 +550,13 @@
       <div class="slide-header">
         <div class="slide-num tools">07</div>
         <div class="slide-title-wrap">
-          <h2>23 IBM i Tools</h2>
+          <h2>29 IBM i Tools</h2>
           <div class="slide-tag">At your AI's fingertips</div>
         </div>
       </div>
       <div class="speech-block">
         <p class="speech-text">
-          "That translates to <em>23 purpose-built tools</em> — source members, objects, IFS,
+          "That translates to <em>29 purpose-built tools</em> — source members, objects, IFS,
           SQL, job logs, spool files, CL diagnostics, and full VS Code editor integration.
           Every tool available to <strong>all three AI clients simultaneously</strong>,
           the moment you install."
@@ -558,49 +564,125 @@
       </div>
       <div class="notes-block">
         <span class="notes-icon">💡</span>
-        <span class="notes-text">You don't need to read every chip — gesture at the categories and let the audience scan. Keep the pace up here.</span>
+        <span class="notes-text">You don't need to read every chip — gesture at the categories and let the audience scan. Keep the pace up here, the demos are next.</span>
       </div>
       <div class="timing-row"><span class="timing-badge">~25 sec</span></div>
     </section>
 
-    <!-- ── SLIDE 8 ── -->
+    <!-- ── SLIDE 8 — DEMO 1 ── -->
     <section class="slide-section" id="s8">
       <div class="slide-header">
         <div class="slide-num demo1">08</div>
         <div class="slide-title-wrap">
-          <h2>Demo 1 — Row Count Analysis</h2>
-          <div class="slide-tag">Cross-table row count across a full schema</div>
+          <h2>Demo 1 — Job Stuck in Message Wait</h2>
+          <div class="slide-tag">Diagnose a silent batch job with ibmi_find_jobs + ibmi_get_job_log</div>
         </div>
       </div>
       <div class="speech-block">
         <p class="speech-text">
-          "Let's see it in action. I ask Claude Code:
-          <em>'Get row counts for all main tables and their history tables in ECMDTZDTA.'</em>
+          "First demo. A batch job went completely silent — no error, no output, just hanging.
+          I ask Claude Code: <em>'Is any of my jobs in message wait? Get the root cause.'</em>
+          It calls <em>ibmi_find_jobs</em> to scan for MSGW jobs, then pulls the full job log with <em>ibmi_get_job_log</em>.
+          Root cause in seconds: the job is actually <strong>healthy</strong> — it completed two SQL steps successfully,
+          then sent an inquiry message to QSYSOPR waiting for a human decision before running the extract.
+          <strong>One prompt. Two tool calls. Full picture.</strong>"
+        </p>
+      </div>
+      <div class="notes-block">
+        <span class="notes-icon">💡</span>
+        <span class="notes-text">If running live — paste the prompt and point out the two tool calls appearing in sequence in chat. That two-step chaining ("find it, then read it") is the moment the audience sees the AI reasoning, not just looking something up.</span>
+      </div>
+      <div class="timing-row"><span class="timing-badge">~45 sec</span></div>
+    </section>
+
+    <!-- ── SLIDE 9 — DEMO 2 ── -->
+    <section class="slide-section" id="s9">
+      <div class="slide-header">
+        <div class="slide-num demo2">09</div>
+        <div class="slide-title-wrap">
+          <h2>Demo 2 — IFS Directory Analysis</h2>
+          <div class="slide-tag">Explore &amp; explain an IFS directory with ibmi_list_ifs_directory + ibmi_get_ifs_file</div>
+        </div>
+      </div>
+      <div class="speech-block">
+        <p class="speech-text">
+          "Demo 2. A developer inherits a home directory full of mystery files — shell scripts, Python, configs, logs.
+          One prompt: <em>'What are all these files in my home directory and what do they do?'</em>
+          It lists the IFS directory, reads the key scripts and config files, and gives a
+          <strong>plain-English breakdown of every object</strong> — including which ones are active cron jobs and when they run.
+          What would normally take 30 minutes of cat-and-grep: done in one shot."
+        </p>
+      </div>
+      <div class="notes-block">
+        <span class="notes-icon">💡</span>
+        <span class="notes-text">Emphasise the two-step: list first, then selectively read files for context. The AI is making a judgment call about which files are worth reading — that's what makes it genuinely useful rather than just a grep wrapper.</span>
+      </div>
+      <div class="timing-row"><span class="timing-badge">~40 sec</span></div>
+    </section>
+
+    <!-- ── SLIDE 10 — DEMO 3 ── -->
+    <section class="slide-section" id="s10">
+      <div class="slide-header">
+        <div class="slide-num demo3">10</div>
+        <div class="slide-title-wrap">
+          <h2>Demo 3 — Source Member Analysis</h2>
+          <div class="slide-tag">Explain a CL program &amp; generate a flow diagram with ibmi_get_source_member</div>
+        </div>
+      </div>
+      <div class="speech-block">
+        <p class="speech-text">
+          "Demo 3. There's an 89-line CL program nobody has touched in 3 years.
+          I ask: <em>'Analyse BATCHFTP in QCLLESRC. Explain what it does and create a program flow diagram.'</em>
+          It reads the source member directly and returns a clean explanation —
+          plus an <strong>ASCII flow diagram you can share with the team</strong> right now.
+          No copy-paste. No 5250 session. No manual reading every MONMSG."
+        </p>
+      </div>
+      <div class="notes-block">
+        <span class="notes-icon">💡</span>
+        <span class="notes-text">The flow diagram is the visual payoff here — point to it on screen. Teams often screenshot this immediately for documentation. Mention that the diagram is generated from the actual code, not from memory.</span>
+      </div>
+      <div class="timing-row"><span class="timing-badge">~35 sec</span></div>
+    </section>
+
+    <!-- ── SLIDE 11 — DEMO 4 ── -->
+    <section class="slide-section" id="s11">
+      <div class="slide-header">
+        <div class="slide-num demo4">11</div>
+        <div class="slide-title-wrap">
+          <h2>Demo 4 — Row Count Analysis</h2>
+          <div class="slide-tag">Cross-table row count across a full schema with ibmi_run_sql</div>
+        </div>
+      </div>
+      <div class="speech-block">
+        <p class="speech-text">
+          "Demo 4 — a SQL power move. I ask Claude Code:
+          <em>'Get row counts for all main tables and their history tables in XYZLIBRARY.'</em>
           It calls <em>ibmi_run_sql</em>, queries the system catalog,
-          dynamically builds the COUNT queries, and returns a clean result —
+          dynamically builds the COUNT queries for every table pair, and returns a clean result —
           <strong>18 table pairs in seconds.</strong>
           Manually writing that SQL would take most developers 20 minutes."
         </p>
       </div>
       <div class="notes-block">
         <span class="notes-icon">💡</span>
-        <span class="notes-text">If running live — paste the prompt and let it run in real time. The tool call appearing in chat is the "wow moment." Point it out explicitly.</span>
+        <span class="notes-text">If running live — paste the prompt and let it run in real time. The tool call appearing in chat is the "wow moment." Point it out explicitly. The key thing: the AI inferred the naming convention (trailing H) from the prompt alone.</span>
       </div>
       <div class="timing-row"><span class="timing-badge">~40 sec</span></div>
     </section>
 
-    <!-- ── SLIDE 9 ── -->
-    <section class="slide-section" id="s9">
+    <!-- ── SLIDE 12 — DEMO 5 ── -->
+    <section class="slide-section" id="s12">
       <div class="slide-header">
-        <div class="slide-num demo2">09</div>
+        <div class="slide-num demo5">12</div>
         <div class="slide-title-wrap">
-          <h2>Demo 2 — Fix FK Hierarchy Function</h2>
-          <div class="slide-tag">Debug &amp; fix a SQL table function</div>
+          <h2>Demo 5 — Fix FK Hierarchy Function</h2>
+          <div class="slide-tag">Debug &amp; fix a SQL table function with ibmi_get_active_editor + ibmi_run_sql</div>
         </div>
       </div>
       <div class="speech-block">
         <p class="speech-text">
-          "Second demo — a real debugging scenario. A SQL table function is returning <em>level 1 for every table</em>,
+          "Final demo — a real debugging scenario. A SQL table function is returning <em>level 1 for every table</em>,
           ignoring all the FK relationships. I ask Claude Code to investigate.
           It reads the open source member <strong>directly from my editor</strong> using <em>ibmi_get_active_editor</em> —
           no copy-paste — then queries the FK catalog.
@@ -612,15 +694,15 @@
       </div>
       <div class="notes-block">
         <span class="notes-icon">💡</span>
-        <span class="notes-text">Stress "without me doing anything" — the audience should feel the friction that just disappeared. This is the most technically impressive moment of the demo.</span>
+        <span class="notes-text">Stress "without me doing anything" — the audience should feel the friction that just disappeared. This is the most technically impressive moment of the full demo. End here with a beat of silence before moving to the impact slide.</span>
       </div>
       <div class="timing-row"><span class="timing-badge">~55 sec</span></div>
     </section>
 
-    <!-- ── SLIDE 10 ── -->
-    <section class="slide-section" id="s10">
+    <!-- ── SLIDE 13 ── -->
+    <section class="slide-section" id="s13">
       <div class="slide-header">
-        <div class="slide-num impact">10</div>
+        <div class="slide-num impact">13</div>
         <div class="slide-title-wrap">
           <h2>Before &amp; After iAgentX</h2>
           <div class="slide-tag">Impact on the day-to-day workflow</div>
@@ -632,7 +714,7 @@
           a 5250 terminal, and a chat window — the AI working completely blind.
           After: <em>one chat window</em>, the AI reads your source directly,
           sees your open editors in real time, has full access to job logs and diagnostics.
-          <strong>Zero extra credentials. Twenty-three tools. Three AI clients. Zero cost.</strong>"
+          <strong>Zero extra credentials. Twenty-nine tools. Three AI clients. Zero cost.</strong>"
         </p>
       </div>
       <div class="notes-block">
@@ -642,10 +724,10 @@
       <div class="timing-row"><span class="timing-badge">~40 sec</span></div>
     </section>
 
-    <!-- ── SLIDE 11 ── -->
-    <section class="slide-section" id="s11">
+    <!-- ── SLIDE 14 ── -->
+    <section class="slide-section" id="s14">
       <div class="slide-header">
-        <div class="slide-num start">11</div>
+        <div class="slide-num start">14</div>
         <div class="slide-title-wrap">
           <h2>Get Started</h2>
           <div class="slide-tag">Up and running in 3 steps</div>
@@ -670,19 +752,19 @@
     <!-- ── SUMMARY ── -->
     <div class="summary-footer">
       <div class="summary-stat">
-        <div class="summary-stat-num">12</div>
+        <div class="summary-stat-num">15</div>
         <div class="summary-stat-label">slides</div>
       </div>
       <div class="summary-stat">
-        <div class="summary-stat-num">~7</div>
+        <div class="summary-stat-num">~10</div>
         <div class="summary-stat-label">minutes total</div>
       </div>
       <div class="summary-stat">
-        <div class="summary-stat-num">2</div>
+        <div class="summary-stat-num">5</div>
         <div class="summary-stat-label">live demos</div>
       </div>
       <div style="flex:1; font-size:13px; color:var(--text-muted); line-height:1.7;">
-        Slides 8 &amp; 9 may run longer with a live connection. Build in ~2 min buffer for Q&amp;A after slide 11.
+        Demos 4 &amp; 5 (slides 11–12) may run longer with a live connection. Build in ~2 min buffer for Q&amp;A after slide 14.
       </div>
     </div>
 
@@ -691,7 +773,6 @@
 
 <script>
   /* Progress bar on scroll */
-  const main = document.querySelector('.main');
   window.addEventListener('scroll', () => {
     const scrolled = window.scrollY;
     const total = document.body.scrollHeight - window.innerHeight;
