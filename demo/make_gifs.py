@@ -21,23 +21,25 @@ HTML_PATH = Path(__file__).parent / "iagentx4i-demo.html"
 OUT_DIR   = Path(__file__).parent / "gifs"
 OUT_DIR.mkdir(exist_ok=True)
 
-# DOM index (0=blank, 1=hook, 2=slide-1 title, ... 13=slide-12 get-started)
+# DOM index (0=blank, 1=hook, 2=slide-1 title, ... 15=slide-14 get-started)
 # (dom_idx, label, anim_ms, fps, n_frames, cap_height)
 # cap_height: viewport height used during capture; result is always resized to WIDTH x HEIGHT
 SLIDES = [
-    (1,  "00_hook",          4500, 6, 28,  720),
-    (2,  "01_title",         3500, 6, 22,  720),
-    (3,  "02_challenge",     3500, 6, 22,  720),
-    (4,  "03_market_gap",    4000, 6, 25,  720),
-    (5,  "04_introducing",   3500, 6, 22,  720),
-    (6,  "05_architecture",  4000, 6, 25,  720),
-    (7,  "06_security",      4000, 6, 25,  720),
-    (8,  "07_tools",         3500, 6, 22,  720),
-    (9,  "08_demo1_msgw",    3500, 6, 22,  720),
-    (10, "09_demo2_rowcount",3500, 6, 22,  720),
-    (11, "10_demo3_fk",      3500, 6, 22,  1040),
-    (12, "11_impact",        3500, 6, 22,  720),
-    (13, "12_get_started",   4000, 6, 25,  720),
+    (1,  "00_hook",           8000, 10, 60,  720),
+    (2,  "01_title",          6000, 10, 45,  720),
+    (3,  "02_challenge",      6000, 10, 45,  720),
+    (4,  "03_market_gap",     6500, 10, 49,  720),
+    (5,  "04_introducing",    6000, 10, 45,  720),
+    (6,  "05_architecture",   6500, 10, 49,  720),
+    (7,  "06_security",       6500, 10, 49,  720),
+    (8,  "07_tools",          6000, 10, 45,  720),
+    (9,  "08_demo1_msgw",     6000, 10, 45,  720),
+    (10, "09_demo2_ifs",      6000, 10, 45,  720),
+    (11, "10_demo3_srcmbr",   6000, 10, 45,  720),
+    (12, "11_demo4_rowcount", 6000, 10, 45,  720),
+    (13, "12_demo5_fk",       6000, 10, 45,  1040),
+    (14, "13_impact",         6000, 10, 45,  720),
+    (15, "14_get_started",    6500, 10, 49,  720),
 ]
 
 WIDTH, HEIGHT = 1280, 720
@@ -95,8 +97,8 @@ async def capture_slide(page, slide_idx: int, label: str,
         img = Image.open(io.BytesIO(png)).convert("RGBA")
         img = img.resize((WIDTH, HEIGHT), Image.LANCZOS)
         frames.append(img)
-        # Hold last frame 2.5 s so viewer can read the content
-        durations.append(2500 if i == n_frames - 1 else frame_ms)
+        # Hold last frame 4 s so viewer can read the content
+        durations.append(4000 if i == n_frames - 1 else frame_ms)
 
     return frames, durations
 

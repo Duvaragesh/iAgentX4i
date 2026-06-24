@@ -602,7 +602,7 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<an
 
   if (name === 'ibmi_run_sql') {
     const query = String(args.query);
-    const cfg = vscode.workspace.getConfiguration('ibm-iagentx');
+    const cfg = vscode.workspace.getConfiguration('iagentx4i');
     const defaultMax: number = cfg.get('sqlMaxRows') ?? 100;
     const maxRows = Math.min(Number(args.maxRows ?? defaultMax), 1000);
     const offset = Math.max(Number(args.offset ?? 0), 0);
@@ -696,7 +696,7 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<an
 
   if (name === 'ibmi_run_cl_command') {
     const command = String(args.command);
-    const cfg = vscode.workspace.getConfiguration('ibm-iagentx');
+    const cfg = vscode.workspace.getConfiguration('iagentx4i');
     const verb = command.trim().toUpperCase().split(/\s+/)[0];
     if (verb === 'CPYSPLF') {
       const tofileMatch = /TOFILE\s*\(\s*\*TOSTMF\s*\)/i.test(command);
@@ -1253,7 +1253,7 @@ async function handleJsonRpc(msg: any): Promise<any | null> {
       return ok({
         protocolVersion: '2024-11-05',
         capabilities: { tools: {}, logging: {} },
-        serverInfo: { name: 'ibm-iagentx', version: '0.1.0' },
+        serverInfo: { name: 'iagentx4i', version: '0.1.0' },
       });
     case 'notifications/initialized':
       return null;
@@ -1396,7 +1396,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
 export function createHttpServer(): http.Server {
   return http.createServer((req, res) => {
     handleRequest(req, res).catch(err => {
-      console.error('[ibm-iagentx] handler error:', err);
+      console.error('[iagentx4i] handler error:', err);
       if (!res.headersSent) { res.writeHead(500); res.end(); }
     });
   });

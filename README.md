@@ -1,14 +1,14 @@
-# IBM iAgentX
+# iAgentX for IBM i
 
 **Bring your IBM i system into VS Code AI agents — GitHub Copilot Chat, Claude Code, and IBM Bob.**
 
-IBM iAgentX exposes IBM i resources (source members, IFS files, SQL, job logs, CL commands)
+iAgentX for IBM i exposes IBM i resources (source members, IFS files, SQL, job logs, CL commands)
 to AI coding agents via the Model Context Protocol (MCP). It reuses the active SSH connection
 managed by [Code for IBM i](https://marketplace.visualstudio.com/items?itemName=halcyontechltd.code-for-ibmi)
 — no second connection, no extra credentials.
 
-> **IBM iAgentX is updated frequently.** Enable auto-updates in VS Code: **Extensions** →
-> right-click **IBM iAgentX** → **Enable Auto Update**.
+> **iAgentX is updated frequently.** Enable auto-updates in VS Code: **Extensions** →
+> right-click **iAgentX for IBM i** → **Enable Auto Update**.
 
 ---
 
@@ -17,7 +17,7 @@ managed by [Code for IBM i](https://marketplace.visualstudio.com/items?itemName=
 ### Your AI is brilliant. Just completely blind to IBM i.
 ![Hook](demo/gifs/slide_01_00_hook.gif)
 
-### IBM iAgentX — Bring AI Intelligence to Your IBM i
+### iAgentX for IBM i — Bring AI Intelligence to Your IBM i
 ![Title](demo/gifs/slide_02_01_title.gif)
 
 ### The Challenge — Why AI can't help IBM i developers
@@ -26,7 +26,7 @@ managed by [Code for IBM i](https://marketplace.visualstudio.com/items?itemName=
 ### Market Gap — How do the options stack up?
 ![Market Gap](demo/gifs/slide_04_03_market_gap.gif)
 
-### The Solution — Meet IBM iAgentX
+### The Solution — Meet iAgentX for IBM i
 ![Introducing](demo/gifs/slide_05_04_introducing.gif)
 
 ### Architecture — How it all connects
@@ -41,17 +41,23 @@ managed by [Code for IBM i](https://marketplace.visualstudio.com/items?itemName=
 ### Demo 1 — Diagnose a job stuck in MSGW
 ![Demo MSGW](demo/gifs/slide_09_08_demo1_msgw.gif)
 
-### Demo 2 — Cross-table row count analysis
-![Demo Row Count](demo/gifs/slide_10_09_demo2_rowcount.gif)
+### Demo 2 — Analyse an IFS directory and explain its contents
+![Demo IFS](demo/gifs/slide_10_09_demo2_ifs.gif)
 
-### Demo 3 — Debug & fix a SQL table function
-![Demo FK Fix](demo/gifs/slide_11_10_demo3_fk.gif)
+### Demo 3 — Analyse a source member and generate a program flow diagram
+![Demo Source Member](demo/gifs/slide_11_10_demo3_srcmbr.gif)
+
+### Demo 4 — Cross-table row count analysis
+![Demo Row Count](demo/gifs/slide_12_11_demo4_rowcount.gif)
+
+### Demo 5 — Debug & fix a SQL table function
+![Demo FK Fix](demo/gifs/slide_13_12_demo5_fk.gif)
 
 ### Impact — Before & After iAgentX
-![Impact](demo/gifs/slide_12_11_impact.gif)
+![Impact](demo/gifs/slide_14_13_impact.gif)
 
 ### Get Started — Up and running in 3 steps
-![Get Started](demo/gifs/slide_13_12_get_started.gif)
+![Get Started](demo/gifs/slide_15_14_get_started.gif)
 
 ---
 
@@ -92,17 +98,17 @@ Everything happens through the existing Code for IBM i SSH session.
 Install from the Marketplace or via the command line:
 
 ```bash
-code --install-extension Duvaragesh.ibm-iagentx
+code --install-extension Duvaragesh.iagentx4i
 ```
 
 Or install a `.vsix` file directly (e.g. after building from source):
 
 ```
-Extensions view → ⋯ → Install from VSIX… → select ibm-iagentx-<version>.vsix
+Extensions view → ⋯ → Install from VSIX… → select iagentx4i-<version>.vsix
 ```
 
 ```bash
-code --install-extension ibm-iagentx-<version>.vsix
+code --install-extension iagentx4i-<version>.vsix
 ```
 
 No manual configuration required — the extension auto-configures Claude Code and VS Code
@@ -119,7 +125,7 @@ On first activation the extension writes its MCP server URL into `~/.claude.json
 ```json
 {
   "mcpServers": {
-    "ibm-iagentx": {
+    "iagentx4i": {
       "type": "sse",
       "url": "http://127.0.0.1:41927/sse"
     }
@@ -137,8 +143,8 @@ Copilot Chat picks this up without any manual steps.
 
 ### IBM Bob (automatic)
 
-IBM iAgentX auto-configures IBM Bob by writing to its MCP settings file. Set the
-`ibm-iagentx.bobAppDataFolder` setting to the app data folder name Bob uses on your machine
+iAgentX auto-configures IBM Bob by writing to its MCP settings file. Set the
+`iagentx4i.bobAppDataFolder` setting to the app data folder name Bob uses on your machine
 (e.g. `IBMBob`) — leave it blank to skip Bob configuration.
 
 The file updated is:
@@ -165,7 +171,7 @@ Code session.
 To pin a port permanently:
 
 ```json
-"ibm-iagentx.preferredPort": 41927
+"iagentx4i.preferredPort": 41927
 ```
 
 ---
@@ -452,10 +458,10 @@ Output: { success, uri }
 
 | Setting | Default | Description |
 |---|---|---|
-| `ibm-iagentx.preferredPort` | `41927` | HTTP port for the iAgentX server; falls back to next 4 ports if busy |
-| `ibm-iagentx.sqlMaxRows` | `100` | Default max rows returned by `ibmi_run_sql` (1–1000) |
-| `ibm-iagentx.clAllowedPrefixes` | `["DSP","LST","WRK","CHK","PRT","DMP","RTV","QRY"]` | CL verb prefixes permitted by `ibmi_run_cl_command` |
-| `ibm-iagentx.bobAppDataFolder` | `""` | App data folder name used by IBM Bob (e.g. `IBMBob`). Leave blank to skip Bob auto-configuration |
+| `iagentx4i.preferredPort` | `41927` | HTTP port for the iAgentX server; falls back to next 4 ports if busy |
+| `iagentx4i.sqlMaxRows` | `100` | Default max rows returned by `ibmi_run_sql` (1–1000) |
+| `iagentx4i.clAllowedPrefixes` | `["DSP","LST","WRK","CHK","PRT","DMP","RTV","QRY"]` | CL verb prefixes permitted by `ibmi_run_cl_command` |
+| `iagentx4i.bobAppDataFolder` | `""` | App data folder name used by IBM Bob (e.g. `IBMBob`). Leave blank to skip Bob auto-configuration |
 
 ---
 
@@ -479,7 +485,7 @@ The status bar item reflects the live state of both the iAgentX server and the I
 - **Restart iAgentX server** — stop and restart (useful after a port conflict)
 - **Refresh iAgentX config** — re-write `~/.claude.json` and `mcp.json` with the current port
 
-The command is also available from the Command Palette as **IBM iAgentX: Manage MCP Server**.
+The command is also available from the Command Palette as **iAgentX: Manage MCP Server**.
 
 ### Multiple VS Code Windows
 
@@ -498,7 +504,7 @@ Claude Code (CLI)  /  GitHub Copilot Chat  /  IBM Bob
         │  GET /sse  →  opens event stream
         │  POST /message?sessionId=N  →  JSON-RPC messages
         ▼
-VS Code Extension Host  (IBM iAgentX)
+VS Code Extension Host  (iAgentX for IBM i)
   HTTP server  127.0.0.1:41927  (loopback only)
         │
         │  Code for IBM i public API
@@ -550,7 +556,7 @@ Use the `TABLE()` wrapper: `FROM TABLE(QSYS2.func(...))` instead of `FROM QSYS2.
 The tool auto-retries once with the wrapper, but writing it correctly avoids the round-trip.
 
 **CL command rejected**
-Add the verb prefix to `ibm-iagentx.clAllowedPrefixes` in VS Code settings.
+Add the verb prefix to `iagentx4i.clAllowedPrefixes` in VS Code settings.
 
 ---
 
@@ -561,13 +567,13 @@ Add the verb prefix to `ibm-iagentx.clAllowedPrefixes` in VS Code settings.
 **Prerequisites:** Node.js 18+ and npm.
 
 ```bash
-git clone https://github.com/Duvaragesh/ibm-iagentx.git
-cd ibm-iagentx
+git clone https://github.com/Duvaragesh/iagentx4i.git
+cd iagentx4i
 npm run package
 ```
 
 `npm run package` automatically installs dependencies, runs unit tests, compiles TypeScript,
-and produces `ibm-iagentx-<version>.vsix` in the project root.
+and produces `iagentx4i-<version>.vsix` in the project root.
 
 ### Testing overview
 
@@ -641,4 +647,4 @@ src/tests/
 
 ## License
 
-MIT — [GitHub: Duvaragesh/ibm-iagentx](https://github.com/Duvaragesh/ibm-iagentx)
+Elastic License 2.0 (ELv2) — Free to use including in enterprise environments. Commercial resale or offering as a hosted/managed service requires a separate commercial license. — [GitHub: Duvaragesh/iagentx4i](https://github.com/Duvaragesh/iagentx4i)

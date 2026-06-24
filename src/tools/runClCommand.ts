@@ -23,7 +23,7 @@ export class RunClCommandTool implements vscode.LanguageModelTool<RunClCommandIn
     _token: vscode.CancellationToken
   ): Promise<vscode.LanguageModelToolResult> {
     const { command } = options.input;
-    const cfg = vscode.workspace.getConfiguration('ibm-iagentx');
+    const cfg = vscode.workspace.getConfiguration('iagentx4i');
     const allowedPrefixes: string[] = cfg.get('clAllowedPrefixes') ?? DEFAULT_ALLOWED_PREFIXES;
 
     const verb = command.trim().toUpperCase().split(/\s+/)[0];

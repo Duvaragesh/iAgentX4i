@@ -34,7 +34,7 @@ import { GetProgramInfoTool } from './tools/getProgramInfo.js';
 import { ListUserProfilesTool } from './tools/listUserProfiles.js';
 import { GetOutputQueueInfoTool } from './tools/getOutputQueueInfo.js';
 
-const SERVER_NAME = 'ibm-iagentx';
+const SERVER_NAME = 'iagentx4i';
 const OLD_SERVER_NAME = 'dk-ibmi-mcp'; // legacy key — removed from configs on first run
 const PORT_ATTEMPTS = 5;
 
@@ -153,7 +153,7 @@ async function updateVscodeMcpJson(port: number, channel: vscode.OutputChannel):
 }
 
 async function updateBobMcpSettings(port: number, channel: vscode.OutputChannel): Promise<boolean> {
-  const bobFolder: string = vscode.workspace.getConfiguration('ibm-iagentx').get('bobAppDataFolder') ?? '';
+  const bobFolder: string = vscode.workspace.getConfiguration('iagentx4i').get('bobAppDataFolder') ?? '';
   if (!bobFolder.trim()) {
     channel.appendLine('[iAgentX] Bob app data folder not configured — skipping Bob config');
     return false;
@@ -193,14 +193,14 @@ async function updateBobMcpSettings(port: number, channel: vscode.OutputChannel)
 }
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  const channel = vscode.window.createOutputChannel('IBM iAgentX');
+  const channel = vscode.window.createOutputChannel('iAgentX for IBM i');
   context.subscriptions.push(channel);
   channel.appendLine('[iAgentX] activate() called');
 
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusBar.text = '$(loading~spin) iAgentX';
-  statusBar.tooltip = 'IBM iAgentX — starting…';
-  statusBar.command = 'ibm-iagentx.manage';
+  statusBar.tooltip = 'iAgentX for IBM i — starting…';
+  statusBar.command = 'iagentx4i.manage';
   statusBar.show();
   context.subscriptions.push(statusBar);
 
@@ -211,7 +211,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.window.onDidChangeActiveTextEditor(editor => setLastActiveEditor(editor))
   );
 
-  const cfg = vscode.workspace.getConfiguration('ibm-iagentx');
+  const cfg = vscode.workspace.getConfiguration('iagentx4i');
   const preferredPort: number = cfg.get('preferredPort') ?? 41927;
 
   type ServerState = 'starting' | 'running' | 'stopped' | 'disconnected' | 'shared';
@@ -224,23 +224,23 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     switch (serverState) {
       case 'starting':
         statusBar.text    = '$(loading~spin) iAgentX';
-        statusBar.tooltip = 'IBM iAgentX — starting…';
+        statusBar.tooltip = 'iAgentX for IBM i — starting…';
         break;
       case 'running':
         statusBar.text    = `$(check) iAgentX :${activePort}`;
-        statusBar.tooltip = `IBM iAgentX running on http://127.0.0.1:${activePort} — click to manage`;
+        statusBar.tooltip = `iAgentX for IBM i running on http://127.0.0.1:${activePort} — click to manage`;
         break;
       case 'disconnected':
         statusBar.text    = `$(warning) iAgentX :${activePort}`;
-        statusBar.tooltip = 'IBM iAgentX — IBM i disconnected — IBM i tools unavailable (VS Code tools still work)';
+        statusBar.tooltip = 'iAgentX for IBM i — IBM i disconnected — IBM i tools unavailable (VS Code tools still work)';
         break;
       case 'stopped':
         statusBar.text    = '$(circle-slash) iAgentX';
-        statusBar.tooltip = 'IBM iAgentX — MCP server stopped — click to manage';
+        statusBar.tooltip = 'iAgentX for IBM i — MCP server stopped — click to manage';
         break;
       case 'shared':
         statusBar.text    = `$(check) iAgentX :${activePort} (shared)`;
-        statusBar.tooltip = `IBM iAgentX — shared server on port ${activePort} (owned by another VS Code window)`;
+        statusBar.tooltip = `iAgentX for IBM i — shared server on port ${activePort} (owned by another VS Code window)`;
         break;
     }
   }
@@ -250,7 +250,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     mcpProvider = vscode.lm.registerMcpServerDefinitionProvider(SERVER_NAME, {
       provideMcpServerDefinitions(_token) {
         return [new vscode.McpHttpServerDefinition(
-          'IBM iAgentX',
+          'iAgentX for IBM i',
           vscode.Uri.parse(`http://127.0.0.1:${port}`),
           {}, '0.1.0'
         )];
@@ -279,9 +279,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       if (err || port === undefined) {
         const msg = `Failed to start server: ${err?.message}`;
         channel.appendLine(`[iAgentX] ${msg}`);
-        vscode.window.showErrorMessage(`IBM iAgentX: ${msg}`);
+        vscode.window.showErrorMessage(`iAgentX: ${msg}`);
         statusBar.text    = '$(error) iAgentX';
-        statusBar.tooltip = `IBM iAgentX — failed: ${err?.message}`;
+        statusBar.tooltip = `iAgentX for IBM i — failed: ${err?.message}`;
         return;
       }
 
@@ -304,14 +304,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         channel.appendLine('[iAgentX] startServer() complete');
         if (claudeChanged || mcpChanged || bobChanged) {
           vscode.window.showInformationMessage(
-            `IBM iAgentX: Server registered on port ${port}. Start a new Claude Code session to use IBM i tools.`,
+            `iAgentX: Server registered on port ${port}. Start a new Claude Code session to use IBM i tools.`,
             'OK'
           );
         }
       }).catch(e => {
         const msg = `Could not update config files: ${(e as Error).message}`;
         channel.appendLine(`[iAgentX] WARNING — ${msg}`);
-        vscode.window.showWarningMessage(`IBM iAgentX: ${msg}`);
+        vscode.window.showWarningMessage(`iAgentX: ${msg}`);
       });
     });
   }
@@ -343,9 +343,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   }
 
   // Keep backward-compatible reconnect command
-  const reconnect = vscode.commands.registerCommand('ibm-iagentx.reconnect', () => {
+  const reconnect = vscode.commands.registerCommand('iagentx4i.reconnect', () => {
     if (activePort === undefined) {
-      vscode.window.showWarningMessage('IBM iAgentX: Server is not running yet.');
+      vscode.window.showWarningMessage('iAgentX: Server is not running yet.');
       return;
     }
     channel.appendLine(`[iAgentX] Reconnect requested on port ${activePort}`);
@@ -355,16 +355,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       updateBobMcpSettings(activePort, channel),
     ]).then(() => {
       vscode.window.showInformationMessage(
-        `IBM iAgentX: Config refreshed (port ${activePort}). Start a new Claude Code session if needed.`
+        `iAgentX: Config refreshed (port ${activePort}). Start a new Claude Code session if needed.`
       );
     }).catch(e => {
-      vscode.window.showWarningMessage(`IBM iAgentX: Reconnect failed — ${(e as Error).message}`);
+      vscode.window.showWarningMessage(`iAgentX: Reconnect failed — ${(e as Error).message}`);
     });
   });
   context.subscriptions.push(reconnect);
 
   // Manage command — status bar click opens quick pick
-  const manage = vscode.commands.registerCommand('ibm-iagentx.manage', async () => {
+  const manage = vscode.commands.registerCommand('iagentx4i.manage', async () => {
     type Item = vscode.QuickPickItem & { action: string };
     const items: Item[] = [];
 
@@ -378,7 +378,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     } else if (serverState === 'shared') {
       items.push({ label: '$(sync) Refresh iAgentX config',       description: 'Re-write ~/.claude.json and mcp.json',  action: 'refresh' });
     } else {
-      vscode.window.showInformationMessage('IBM iAgentX: Server is starting, please wait…');
+      vscode.window.showInformationMessage('iAgentX: Server is starting, please wait…');
       return;
     }
 
@@ -400,7 +400,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         break;
       case 'refresh':
         if (activePort === undefined) {
-          vscode.window.showWarningMessage('IBM iAgentX: Server is not running.');
+          vscode.window.showWarningMessage('iAgentX: Server is not running.');
           return;
         }
         Promise.all([
@@ -409,10 +409,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           updateBobMcpSettings(activePort, channel),
         ]).then(() => {
           vscode.window.showInformationMessage(
-            `IBM iAgentX: Config refreshed (port ${activePort}). Start a new Claude Code session if needed.`
+            `iAgentX: Config refreshed (port ${activePort}). Start a new Claude Code session if needed.`
           );
         }).catch(e => {
-          vscode.window.showWarningMessage(`IBM iAgentX: Refresh failed — ${(e as Error).message}`);
+          vscode.window.showWarningMessage(`iAgentX: Refresh failed — ${(e as Error).message}`);
         });
         break;
     }

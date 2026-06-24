@@ -4,7 +4,7 @@
   "description": "Extends IBM i resources (source members, IFS, SQL, job logs) into VS Code AI agents — GitHub Copilot Chat and Claude Code — via MCP.",
   "version": "0.0.1",
   "publisher": "Duvaragesh",
-  "license": "MIT",
+  "license": "Elastic-2.0",
   "icon": "images/logo.png",
   "repository": {
     "type": "git",

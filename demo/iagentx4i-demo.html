@@ -325,7 +325,10 @@
   ═══════════════════════════════════════════════ */
   #slide-1 {
     background: radial-gradient(ellipse at 30% 40%, #001d6c 0%, #000510 60%);
-    text-align: center;
+    flex-direction: row;
+    gap: 56px;
+    align-items: center;
+    justify-content: center;
   }
   #slide-1 .glow-orb.a {
     width: 600px; height: 600px;
@@ -345,7 +348,7 @@
   .title-logo {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 16px;
     margin-bottom: 24px;
     opacity: 0;
@@ -412,11 +415,8 @@
 
   /* Terminal animation on title */
   .terminal-preview {
-    position: absolute;
-    right: 8%;
-    top: 50%;
-    transform: translateY(-50%);
     width: 340px;
+    flex-shrink: 0;
     background: var(--vscode-dark);
     border: 1px solid var(--vscode-border);
     border-radius: 10px;
@@ -1111,9 +1111,29 @@
   .slide.active .tools-used-row.mu  { animation: fadeIn 0.4s 1.8s ease forwards; }
 
   /* ═══════════════════════════════════════════════
-     SLIDE 9 — DEMO 2
+     SLIDE 9 — DEMO 2: IFS ANALYSIS
   ═══════════════════════════════════════════════ */
   #slide-9 {
+    background: radial-gradient(ellipse at 60% 80%, #001a10 0%, #030810 60%);
+    flex-direction: row;
+    gap: 40px;
+    align-items: stretch;
+  }
+
+  /* ═══════════════════════════════════════════════
+     SLIDE 10 — DEMO 3: SOURCE MEMBER ANALYSIS
+  ═══════════════════════════════════════════════ */
+  #slide-10 {
+    background: radial-gradient(ellipse at 40% 20%, #0a0020 0%, #030510 55%);
+    flex-direction: row;
+    gap: 40px;
+    align-items: stretch;
+  }
+
+  /* ═══════════════════════════════════════════════
+     SLIDE 11 — DEMO 4: ROW COUNT
+  ═══════════════════════════════════════════════ */
+  #slide-11 {
     background: radial-gradient(ellipse at 20% 20%, #0d001a 0%, #030510 55%);
     flex-direction: row;
     gap: 40px;
@@ -1121,10 +1141,13 @@
   }
 
   /* ═══════════════════════════════════════════════
-     SLIDE 10 — COMPARISON
+     SLIDE 12 — DEMO 5: FK FUNCTION
   ═══════════════════════════════════════════════ */
-  #slide-10 {
+  #slide-12 {
     background: radial-gradient(ellipse at 50% 100%, #001030 0%, #030810 55%);
+    flex-direction: row;
+    gap: 40px;
+    align-items: stretch;
   }
   .compare-wrap {
     display: grid;
@@ -1203,13 +1226,20 @@
   .stat-label { font-size: 12px; color: var(--text-muted); }
 
   /* ═══════════════════════════════════════════════
-     SLIDE 11 — GET STARTED
+     SLIDE 13 — COMPARISON / IMPACT
   ═══════════════════════════════════════════════ */
-  #slide-11 {
+  #slide-13 {
+    background: radial-gradient(ellipse at 50% 100%, #001030 0%, #030810 55%);
+  }
+
+  /* ═══════════════════════════════════════════════
+     SLIDE 14 — GET STARTED
+  ═══════════════════════════════════════════════ */
+  #slide-14 {
     background: radial-gradient(ellipse at 50% 0%, #001d6c 0%, #000510 55%);
     text-align: center;
   }
-  #slide-11 .glow-orb.a {
+  #slide-14 .glow-orb.a {
     width: 600px; height: 600px;
     background: radial-gradient(circle, rgba(0,165,80,0.15) 0%, transparent 70%);
     bottom: -200px; left: 50%; transform: translateX(-50%);
@@ -1375,12 +1405,12 @@
     <div class="glow-orb c"></div>
     <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
 
-    <div style="text-align:center; z-index:1; flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+    <div style="z-index:1; flex:1; display:flex; flex-direction:column; justify-content:center; align-items:flex-start;">
       <img src="../images/logo.png" alt="iAgentX" style="height:80px;margin-bottom:16px;opacity:0.95;">
       <div class="title-logo">
-        <span class="ibm-badge">IBM</span>
         <span style="font-size:42px; font-weight:900; color:#fff; letter-spacing:-2px;">iAgent</span>
         <span class="x-badge">X</span>
+        <span style="font-size:18px; font-weight:600; color:var(--text-secondary); letter-spacing:0.5px; align-self:flex-end; padding-bottom:6px; margin-left:4px;">for IBM i</span>
       </div>
 
       <h1 class="title-main">
@@ -1397,7 +1427,7 @@
     </div>
 
     <!-- Terminal preview on the right -->
-    <div class="terminal-preview" style="z-index:1;">
+    <div class="terminal-preview">
       <div class="terminal-bar">
         <span class="tbar-dot r"></span>
         <span class="tbar-dot y"></span>
@@ -1561,7 +1591,7 @@
       </div>
 
       <p class="oss-note">
-        Open source <span class="oss-dot"></span> MIT License <span class="oss-dot"></span> Published by Duvaragesh <span class="oss-dot"></span> VS Code Marketplace
+        Free to use <span class="oss-dot"></span> Elastic License 2.0 <span class="oss-dot"></span> Published by Duvaragesh <span class="oss-dot"></span> VS Code Marketplace
       </p>
     </div>
   </div>
@@ -1888,13 +1918,152 @@
     </div>
   </div>
 
-  <!-- ══════════════════ SLIDE 9 — DEMO 2 ══════════════════ -->
+  <!-- ══════════════════ SLIDE 9 — DEMO 2: IFS ANALYSIS ══════════════════ -->
   <div class="slide" id="slide-9">
     <div class="grid-bg"></div>
     <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
 
     <div class="demo-left" style="z-index:1;">
-      <div class="slide-label">Demo 2 — Row Count Analysis</div>
+      <div class="slide-label">Demo 2 — IFS Directory Analysis</div>
+      <h2 style="font-size:clamp(18px,2.6vw,32px); opacity:0;" class="slide-h2-sm">Requirement: <span class="highlight">Explore &amp; explain an IFS directory</span></h2>
+
+      <div class="demo-q">
+        💬 "What are all these files in my home directory and what do they do?"
+      </div>
+
+      <div class="demo-scenario">
+        <div class="demo-scenario-title">Scenario</div>
+        <ul>
+          <li>IFS path: <code>/home/DK</code></li>
+          <li>Mix of shell scripts, Python files, config &amp; logs</li>
+          <li>Developer wants plain-English explanation of each file</li>
+          <li>AI must list the directory <em>and</em> read key files for context</li>
+        </ul>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px 18px; opacity:0;" class="demo-prompt-box">
+        <div style="font-size:11px; color:var(--ibm-blue-light); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; font-weight:700;">Prompt used</div>
+        <button class="copy-btn" onclick="copyPrompt(this)">📋 Copy</button>
+        <div style="font-family:monospace; font-size:12px; color:var(--text-secondary); line-height:1.6; white-space:pre-wrap;">Analyse the /home/DK directory on IBM i and explain what each file and script is used for.</div>
+      </div>
+    </div>
+
+    <div class="demo-right" style="z-index:1;">
+      <div class="chat-window">
+        <div class="chat-bar">
+          <span class="chat-bar-icon">🤖</span>
+          <span class="chat-bar-title">Claude Code — Chat</span>
+        </div>
+        <div class="chat-msgs">
+          <div class="chat-msg-user m1">Analyse the /home/DK directory on IBM i and explain what each file and script is used for.</div>
+
+          <div class="chat-msg-tool m2" style="flex-direction:column; align-items:flex-start; gap:4px;">
+            <div style="display:flex; gap:8px; align-items:center;"><span>⚡</span><span>ibmi_list_ifs_directory — scanning /home/DK (8 objects found)</span></div>
+            <div style="display:flex; gap:8px; align-items:center; margin-top:2px;"><span>⚡</span><span>ibmi_get_ifs_file — reading backup.sh, etl.py, etl_config.json</span></div>
+          </div>
+
+          <div class="chat-msg-ai m3">
+            <strong style="color:var(--ibm-cyan);">📂 /home/DK — 8 objects</strong><br><br>
+            <strong style="color:#fff;">Shell Scripts</strong><br>
+            <code style="color:var(--ibm-cyan);">backup.sh</code>&nbsp;<span style="color:var(--text-secondary);">— Archives DB2 journal receivers to IFS nightly</span><br>
+            <code style="color:var(--ibm-cyan);">deploy.sh</code>&nbsp;<span style="color:var(--text-secondary);">— Promotes QRPGLESRC members to TESTLIB on commit</span><br>
+            <code style="color:var(--ibm-cyan);">cleanup.sh</code>&nbsp;<span style="color:var(--text-secondary);">— Purges /tmp files older than 7 days</span><br><br>
+            <strong style="color:#fff;">Python</strong><br>
+            <code style="color:var(--ibm-cyan);">etl.py</code>&nbsp;<span style="color:var(--text-secondary);">— Extracts DB2 query results to CSV for reporting pipeline</span><br><br>
+            <strong style="color:#fff;">Config &amp; Logs</strong><br>
+            <code style="color:var(--ibm-cyan);">etl_config.json</code>&nbsp;<span style="color:var(--text-secondary);">— Schema targets, output paths, row limits</span><br>
+            <code style="color:var(--ibm-cyan);">.env.sample</code>&nbsp;<span style="color:var(--text-secondary);">— Env var template for DB2 connection strings</span><br><br>
+            <div style="color:var(--ibm-green-light); font-size:11px;">→ backup.sh and etl.py are active cron jobs. etl.py runs daily at 02:00.</div>
+          </div>
+        </div>
+        <div class="tools-used-row mu">
+          <span class="tools-used-label">Tools used:</span>
+          <span class="tool-badge">ibmi_list_ifs_directory</span>
+          <span class="tool-badge">ibmi_get_ifs_file</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ SLIDE 10 — DEMO 3: SOURCE MEMBER ANALYSIS ══════════════════ -->
+  <div class="slide" id="slide-10">
+    <div class="grid-bg"></div>
+    <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
+
+    <div class="demo-left" style="z-index:1;">
+      <div class="slide-label">Demo 3 — Source Member Analysis</div>
+      <h2 style="font-size:clamp(18px,2.6vw,32px); opacity:0;" class="slide-h2-sm">Requirement: <span class="highlight">Explain code &amp; generate a flow diagram</span></h2>
+
+      <div class="demo-q" style="border-left-color:var(--ibm-green-light);">
+        💬 "What does this CL program do? Give me a flow diagram."
+      </div>
+
+      <div class="demo-scenario">
+        <div class="demo-scenario-title">Scenario</div>
+        <ul>
+          <li>Source file: <code>QCLLESRC</code> · Member: <code>BATCHFTP</code></li>
+          <li>89-line CL program nobody has touched in 3 years</li>
+          <li>Goal: understand the logic without reading every line</li>
+          <li>Bonus: visual flow diagram to share with the team</li>
+        </ul>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px 18px; opacity:0;" class="demo-prompt-box">
+        <div style="font-size:11px; color:var(--ibm-green-light); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; font-weight:700;">Prompt used</div>
+        <button class="copy-btn" onclick="copyPrompt(this)">📋 Copy</button>
+        <div style="font-family:monospace; font-size:12px; color:var(--text-secondary); line-height:1.6; white-space:pre-wrap;">Analyse BATCHFTP in QCLLESRC. Explain what the program does and create a program flow diagram.</div>
+      </div>
+    </div>
+
+    <div class="demo-right" style="z-index:1;">
+      <div class="chat-window">
+        <div class="chat-bar">
+          <span class="chat-bar-icon">🤖</span>
+          <span class="chat-bar-title">Claude Code — Chat</span>
+        </div>
+        <div class="chat-msgs">
+          <div class="chat-msg-user m1">Analyse BATCHFTP in QCLLESRC. Explain what the program does and create a program flow diagram.</div>
+
+          <div class="chat-msg-tool m2">
+            <span>⚡</span>
+            <span>ibmi_get_source_member — reading QCLLESRC/BATCHFTP (89 lines)</span>
+          </div>
+
+          <div class="chat-msg-ai m3">
+            <strong style="color:var(--ibm-cyan);">BATCHFTP — Batch FTP Transfer (CL)</strong><br>
+            <span style="color:var(--text-secondary); font-size:11px;">Transfers nightly DB2 exports from IFS to a remote server via FTP.</span><br><br>
+            <strong style="color:#fff; font-size:11px;">Program Flow:</strong>
+            <div style="font-family:'Cascadia Code','Consolas',monospace; font-size:10.5px; color:var(--text-secondary); margin-top:5px; line-height:1.75;">
+              <span style="color:var(--ibm-cyan);">START</span><br>
+              &nbsp;&nbsp;│<br>
+              &nbsp;&nbsp;▼<br>
+              Declare vars <span style="color:#666;">(FTPHOST, USER, SRC/DST)</span><br>
+              &nbsp;&nbsp;│<br>
+              &nbsp;&nbsp;▼<br>
+              OVRDBF → FTPSCRIPT member<br>
+              &nbsp;&nbsp;│<br>
+              &nbsp;&nbsp;▼<br>
+              CALL FTP RMTSYS(&amp;FTPHOST)<br>
+              &nbsp;&nbsp;├── <span style="color:var(--ibm-green-light);">OK</span>&nbsp; → SNDMSG QSYSOPR → <span style="color:var(--ibm-cyan);">END</span><br>
+              &nbsp;&nbsp;└── <span style="color:var(--accent-red);">ERR</span> → MONMSG CPF0000 → Log → <span style="color:var(--ibm-cyan);">END</span>
+            </div>
+          </div>
+        </div>
+        <div class="tools-used-row mu">
+          <span class="tools-used-label">Tools used:</span>
+          <span class="tool-badge">ibmi_get_source_member</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ SLIDE 11 — DEMO 4: ROW COUNT ══════════════════ -->
+  <div class="slide" id="slide-11">
+    <div class="grid-bg"></div>
+    <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
+
+    <div class="demo-left" style="z-index:1;">
+      <div class="slide-label">Demo 4 — Row Count Analysis</div>
       <h2 style="font-size:clamp(18px,2.6vw,32px); opacity:0;" class="slide-h2-sm">Requirement: <span class="highlight">Cross-table row count analysis</span></h2>
 
       <div class="demo-q">
@@ -1958,13 +2127,13 @@
     </div>
   </div>
 
-  <!-- ══════════════════ SLIDE 10 — DEMO 2 ROW COUNT ══════════════════ -->
-  <div class="slide" id="slide-10">
+  <!-- ══════════════════ SLIDE 12 — DEMO 5: FK FUNCTION ══════════════════ -->
+  <div class="slide" id="slide-12">
     <div class="grid-bg"></div>
     <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
 
     <div class="demo-left" style="z-index:1;">
-      <div class="slide-label">Demo 3 — Fix FK Hierarchy Function</div>
+      <div class="slide-label">Demo 5 — Fix FK Hierarchy Function</div>
       <h2 style="font-size:clamp(18px,2.6vw,32px); opacity:0;" class="slide-h2-sm">Requirement: <span class="highlight">Debug &amp; fix a SQL table function</span></h2>
 
       <div class="demo-q" style="border-left-color:var(--accent-purple);">
@@ -2025,8 +2194,8 @@
     </div>
   </div>
 
-  <!-- ══════════════════ SLIDE 11 — COMPARISON ══════════════════ -->
-  <div class="slide" id="slide-11">
+  <!-- ══════════════════ SLIDE 13 — COMPARISON ══════════════════ -->
+  <div class="slide" id="slide-13">
     <div class="grid-bg"></div>
     <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
 
@@ -2069,14 +2238,14 @@
         </div>
         <div class="stat-box">
           <div class="stat-num">$0</div>
-          <div class="stat-label">cost — open source, MIT</div>
+          <div class="stat-label">cost — free to use, ELv2</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════ SLIDE 12 — GET STARTED ══════════════════ -->
-  <div class="slide" id="slide-12">
+  <!-- ══════════════════ SLIDE 14 — GET STARTED ══════════════════ -->
+  <div class="slide" id="slide-14">
     <div class="grid-bg"></div>
     <div class="glow-orb a"></div>
     <img src="../images/logo.png" alt="iAgentX" style="position:absolute;bottom:24px;right:32px;height:52px;opacity:0.90;z-index:2;pointer-events:none;">
